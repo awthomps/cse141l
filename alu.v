@@ -8,7 +8,7 @@ module alu (input  [31:0] rd_i
            ,output logic jump_now_o);
 			  
 			  logic[4:0] n;
-			  logic[31:0] first_n;
+			  logic[31:0] lreg, rreg;
 			  
 always_comb
   begin
@@ -16,7 +16,6 @@ always_comb
     result_o   = 32'dx;
 	 
 	 n = rs_i[4:0];
-	 first_n = rd_i & ((1 << n)-1);
 
     unique casez (op_i)
       `kADDU:  result_o   = rd_i +  rs_i;
@@ -29,7 +28,7 @@ always_comb
       `kNOR:   result_o   = ~ (rd_i|rs_i);
       `kSLT:   result_o   = ($signed(rd_i)<$signed(rs_i))     ? 32'd1 : 32'd0;
       `kSLTU:  result_o   = ($unsigned(rd_i)<$unsigned(rs_i)) ? 32'd1 : 32'd0;
-		`kBRLU:  result_o   = (rd_i << n) | first_n;
+		`kBRLU:  result_o   = (lreg << n) | (rreg >> (32 - n));
       `kBEQZ:  jump_now_o = (rd_i==32'd0)                     ? 1'b1  : 1'b0;
       `kBNEQZ: jump_now_o = (rd_i!=32'd0)                     ? 1'b1  : 1'b0;
       `kBGTZ:  jump_now_o = ($signed(rd_i)>$signed(32'd0))    ? 1'b1  : 1'b0;
