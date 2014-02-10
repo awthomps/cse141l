@@ -17,6 +17,8 @@
 .data
 LW_Test:
 .word 0xAAAA5555
+LBU_TEST:
+.word 0x00000000
 
 .kernel tester
 
@@ -148,11 +150,12 @@ SW    $R10, $R5    // indicate passed test
 ADDU  $R5,%ONE
 .constreg $C1, 0xAAAA5555
 .constreg $C2, 0x000000AA
-.const %LOAD_Test,  0x00000ABA
-.const %BYTE_PLACE, 0x00000ABC
-MOV   $R8,%LOAD_Test
+.const %LBU_TEST, LBU_TEST
+MOV   $R8,%LBU_TEST
 SW    $R8,$C1
-LBU   $R7,%BYTE_PLACE
+ADDU  $R8,%ONE
+ADDU  $R8,%ONE
+LBU   $R7,$R8
 MOV   $R6,$C2
 // Call the checker subroutine, $R5 = test number, 
 // $R6 = good answer, $R7 = actual answer, $R1 = return address
@@ -169,10 +172,12 @@ JALR  $R1,%CHECK
 // Test for SB
 ADDU  $R5,%ONE
 .constreg $C4,0xAA005555
-MOV   $R8,%BYTE_PLACE
+MOV   $R8,%LBU_TEST
+ADDU  $R8,%ONE
+ADDU  $R8,%ONE
 SB    $R8,$R0
 MOV   $R7,$R0
-LW    $R7,%LOAD_Test
+LW    $R7,%LBU_TEST
 MOV   $R6,$C4
 JALR  $R1,%CHECK
 
