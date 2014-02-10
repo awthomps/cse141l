@@ -1,4 +1,5 @@
-`include "definitions.v"
+//`include "definitions.v"
+`include "/home/janis/cse141l/definitions.v"
 
 module cl_state_machine(input instruction_s instruction_i
                        ,input state_e state_i

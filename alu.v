@@ -1,5 +1,6 @@
 //This is the ALU module of the core, op_code_e is defined in definitions.v file
-`include "definitions.v"
+//`include "definitions.v"
+`include "/home/janis/cse141l/definitions.v"
 
 module alu (input  [31:0] rd_i 
            ,input  [31:0] rs_i 
@@ -16,6 +17,9 @@ always_comb
     result_o   = 32'dx;
 	 
 	 n = rs_i[4:0];
+	 lreg = rd_i;
+	 rreg = rd_i;
+	 
 
     unique casez (op_i)
       `kADDU:  result_o   = rd_i +  rs_i;

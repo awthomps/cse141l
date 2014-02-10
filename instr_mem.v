@@ -1,4 +1,5 @@
-`include "definitions.v"
+//`include "definitions.v"
+`include "/home/janis/cse141l/definitions.v"
 
 // A synchronous instruction memory
 

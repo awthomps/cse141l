@@ -45,7 +45,6 @@ set_global_assignment -name LAST_QUARTUS_VERSION "13.0 SP1"
 set_global_assignment -name VERILOG_FILE core_flattened.v
 set_global_assignment -name VERILOG_FILE instr_mem.v
 set_global_assignment -name VERILOG_FILE core.v
-set_global_assignment -name VERILOG_FILE core_tb.v
 set_global_assignment -name VERILOG_FILE reg_file.v
 set_global_assignment -name VERILOG_FILE cl_state_machine.v
 set_global_assignment -name VERILOG_FILE cl_decode.v

@@ -1,4 +1,6 @@
-`include "definitions.v"
+//`include "definitions.v"
+// This include statement won't work so use your own path
+`include "/home/janis/cse141l/definitions.v"
 
 // Flatten and unflatten structs
 module core_flattened #(parameter imem_addr_width_p=10 

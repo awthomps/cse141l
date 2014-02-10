@@ -1,4 +1,5 @@
-`include "definitions.v"
+//`include "definitions.v"
+`include "/home/janis/cse141l/definitions.v"
 
 // Comment out the line below when running a gate-level i.e. timing simulation in ModelSim
 // `define BEHAVIORAL 
