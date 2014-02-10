@@ -17,14 +17,13 @@
 .data
 LW_Test:
 .word 0xAAAA5555
-LBU_TEST:
-.word 0x00000000
 
 .kernel tester
 
 // Constant values of 1 and 6 which are required during the program
 .const %ONE      , 1
 .const %SIX      , 6
+.const %SIXTEEN  , 16
 
 .text
 
@@ -150,12 +149,11 @@ SW    $R10, $R5    // indicate passed test
 ADDU  $R5,%ONE
 .constreg $C1, 0xAAAA5555
 .constreg $C2, 0x000000AA
-.const %LBU_TEST, LBU_TEST
-MOV   $R8,%LBU_TEST
+.const %LOAD_Test,  0x00000ABA
+.const %BYTE_PLACE, 0x00000ABC
+MOV   $R8,%LOAD_Test
 SW    $R8,$C1
-ADDU  $R8,%ONE
-ADDU  $R8,%ONE
-LBU   $R7,$R8
+LBU   $R7,%BYTE_PLACE
 MOV   $R6,$C2
 // Call the checker subroutine, $R5 = test number, 
 // $R6 = good answer, $R7 = actual answer, $R1 = return address
@@ -172,12 +170,10 @@ JALR  $R1,%CHECK
 // Test for SB
 ADDU  $R5,%ONE
 .constreg $C4,0xAA005555
-MOV   $R8,%LBU_TEST
-ADDU  $R8,%ONE
-ADDU  $R8,%ONE
+MOV   $R8,%BYTE_PLACE
 SB    $R8,$R0
 MOV   $R7,$R0
-LW    $R7,%LBU_TEST
+LW    $R7,%LOAD_Test
 MOV   $R6,$C4
 JALR  $R1,%CHECK
 
@@ -229,6 +225,16 @@ SUBU  $R7,%ONE
 SLTU  $R7,$R0
 MOV   $R6,$R0
 JALR  $R1,%CHECK
+
+// Test for BRLU
+.const %BEFORE_SHIFT	, 0xDEADBEEF // Test that we added in
+.const %AFTER_SHIFT	, 0xBEEFDEAD
+ADDU  $R5,%ONE // update test counter
+MOV   $R7, %BEFORE_SHIFT
+MOV   $R2, %SIXTEEN
+BRLU  $R7, $R2
+MOV   $R6, %AFTER_SHIFT
+JALR  $R1, %CHECK
 
 // Test for AND
 .const %LOGIC1   , 0x0000FFFF
