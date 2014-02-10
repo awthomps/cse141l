@@ -430,7 +430,7 @@ public class vanillaAssembler
      if (address == null) 
       System.out.println("Data Memory Label at "+i+" not found");
 				 else{
-      String temp = Integer.toHexString(address);
+      String temp = address.toString();
       int len=temp.length();
       for (int j=0;j<8-len;j++)
       temp="0"+temp;

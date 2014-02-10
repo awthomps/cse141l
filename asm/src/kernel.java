@@ -241,6 +241,9 @@ class kernel{
 				break;
 
 			case NOTVALID:
+                            System.out.println("Invalid operator: " + instruction.operator);
+                            System.exit(-1);
+                            break;
 			default:
 				return null;
 		}

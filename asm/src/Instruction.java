@@ -110,6 +110,7 @@ class Instruction
     if(numberOfTokens > 0) // The first argument is operator
     {
       operator=st.nextToken();
+      //      System.out.println(operator);
       numberOfTokens--;
       operands = new Operand[numberOfTokens];
       for(int i = 0; i < numberOfTokens; i++)
