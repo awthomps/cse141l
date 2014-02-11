@@ -59,7 +59,9 @@ ERR  = 2'b11
 // size of rd and rs field in the instruction, 
 // which is log of register file size as well
 parameter rd_size_p             = 5;
+parameter rd_size_gp             = 5;
 parameter rs_imm_size_p         = 6; 
+parameter rs_imm_size_gp         = 6; 
 parameter instruction_size_p    = 16;
 // instruction memory and data memory address widths, 
 // which is log of their sizes as well
@@ -71,6 +73,7 @@ parameter ID_length_p = 10;
 
 // Length of barrier output, which is equal to its mask size 
 parameter mask_length_p = 3;
+parameter mask_length_gp = 3;
 
 // a struct for instructions
 typedef struct packed{

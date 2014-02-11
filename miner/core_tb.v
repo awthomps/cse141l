@@ -2,7 +2,7 @@
 // Rich Park, Moein Khazraee
 // Jan. 2014
 
-`include "definitions.v"
+`include "/home/andrei/Documents/Lab2a/cse141l/definitions.v"
 
 // Comment out this line to remove disassembly support
 // You will need to do this when you run a gate-level i.e. timing simulation in ModelSim
@@ -14,9 +14,9 @@
 
 // TODO: Edit the file names below to match your Assembler output files.
 // read from assembled files and store in buffers
-   `define hex_i_file "/home/rmp/Dropbox/School/Winter2014/ta_cse141L/cse141L/assembler/trunk/src/miner_i.hex"
-   `define hex_r_file "/home/rmp/Dropbox/School/Winter2014/ta_cse141L/cse141L/assembler/trunk/src/miner_r.hex"
-   `define hex_d_file "/home/rmp/Dropbox/School/Winter2014/ta_cse141L/cse141L/assembler/trunk/src/miner_d.hex"
+   `define hex_i_file "/home/andrei/Documents/Lab2a/cse141l/miner_i.hex"
+   `define hex_r_file "/home/andrei/Documents/Lab2a/cse141l/miner_r.hex"
+   `define hex_d_file "/home/andrei/Documents/Lab2a/cse141l/miner_d.hex"
 
 module core_tb();
 
@@ -24,7 +24,7 @@ logic clk, reset, reset_r;
 integer i;
 
 // 5 is the op-code size
-localparam instr_length_p = rd_size_gp + rs_imm_size_gp + 5; 
+localparam instr_length_p = rd_size_p + rs_imm_size_p + 5; 
 localparam instr_buffer_size_p = 1024;
 localparam data_buffer_size_p = 1024;
 localparam reg_packet_width_p = 40;
@@ -60,7 +60,7 @@ logic [$bits(net_packet_s)-1:0] core_in_flat, core_out_flat;
 assign core_in_flat = core_in;
 assign core_out = core_out_flat;
 
-logic [mask_length_gp-1:0] barrier_OR;
+logic [mask_length_p-1:0] barrier_OR;
 debug_s debug;
 logic exception;
 
