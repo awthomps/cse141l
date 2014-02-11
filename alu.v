@@ -8,15 +8,10 @@ module alu (input  [31:0] rd_i
            ,output logic [31:0] result_o
            ,output logic jump_now_o);
 
-           logic[4:0] n;
-           logic[31:0] lreg, rreg;
 always_comb
   begin
     jump_now_o = 1'bx;
     result_o   = 32'dx;
-    n = rs_i[4:0];
-    lreg = rd_i;
-    rreg = rd_i;
 
     unique casez (op_i)
       `kADDU:  result_o   = rd_i +  rs_i;
