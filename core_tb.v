@@ -1,5 +1,5 @@
 //`include "definitions.v"
-`include "/home/janis/cse141l/definitions.v"
+`include "/home/andrei/Documents/testLab2/lab2/definitions.v"
 
 // Comment out the line below when running a gate-level i.e. timing simulation in ModelSim
 // `define BEHAVIORAL 
@@ -72,9 +72,9 @@ assign data_mem_addr = select ? data_mem_addr1 : data_mem_addr2;
 initial begin
 // TODO: Edit the file names below to match your Assembler output files.
 // read from assembled files and store in buffers
-$readmemh ("tester_i.hex",ins_packet);
-$readmemh ("tester_d.hex",data_packet);
-$readmemh ("tester_r.hex",reg_packet);
+$readmemh ("/home/andrei/Documents/Lab2a/cse141l/tester_i.hex",ins_packet);
+$readmemh ("/home/andrei/Documents/Lab2a/cse141l/tester_d.hex",data_packet);
+$readmemh ("/home/andrei/Documents/Lab2a/cse141l/tester_r.hex",reg_packet);
 
   // The signals are initialized and the core is reset
   packet = 0;

@@ -1,25 +1,22 @@
 //This is the ALU module of the core, op_code_e is defined in definitions.v file
 //`include "definitions.v"
-`include "/home/janis/cse141l/definitions.v"
+`include "/home/andrei/Documents/Lab2a/cse141l/definitions.v"
 
 module alu (input  [31:0] rd_i 
            ,input  [31:0] rs_i 
            ,input  instruction_s op_i
            ,output logic [31:0] result_o
            ,output logic jump_now_o);
-			  
-			  logic[4:0] n;
-			  logic[31:0] lreg, rreg;
-			  
+
+           logic[4:0] n;
+           logic[31:0] lreg, rreg;
 always_comb
   begin
     jump_now_o = 1'bx;
     result_o   = 32'dx;
-	 
-	 n = rs_i[4:0];
-	 lreg = rd_i;
-	 rreg = rd_i;
-	 
+    n = rs_i[4:0];
+    lreg = rd_i;
+    rreg = rd_i;
 
     unique casez (op_i)
       `kADDU:  result_o   = rd_i +  rs_i;
@@ -32,7 +29,7 @@ always_comb
       `kNOR:   result_o   = ~ (rd_i|rs_i);
       `kSLT:   result_o   = ($signed(rd_i)<$signed(rs_i))     ? 32'd1 : 32'd0;
       `kSLTU:  result_o   = ($unsigned(rd_i)<$unsigned(rs_i)) ? 32'd1 : 32'd0;
-		`kBRLU:  result_o   = (lreg << n) | (rreg >> (32 - n));
+      `kBRLU:  result_o   = (rd_i << rs_i) | (rd_i >> (32 - rs_i));
       `kBEQZ:  jump_now_o = (rd_i==32'd0)                     ? 1'b1  : 1'b0;
       `kBNEQZ: jump_now_o = (rd_i!=32'd0)                     ? 1'b1  : 1'b0;
       `kBGTZ:  jump_now_o = ($signed(rd_i)>$signed(32'd0))    ? 1'b1  : 1'b0;

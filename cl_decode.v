@@ -1,5 +1,5 @@
 //`include "definitions.v"
-`include "/home/janis/cse141l/definitions.v"
+`include "/home/andrei/Documents/Lab2a/cse141l/definitions.v"
 
 //---- Controller ----//
 module cl_decode (input instruction_s instruction_i
@@ -28,7 +28,7 @@ always_comb
   unique casez (instruction_i)
     `kADDU, `kSUBU, `kSLLV, `kSRAV, `kSRLV,
     `kAND,  `kOR,   `kNOR,  `kSLT,  `kSLTU, 
-    `kMOV,  `kJALR, `kLW,   `kLBU, `kBRLU: // Left rotate added
+    `kMOV,  `kJALR, `kLW,   `kLBU, `kBRLU: //left rotate added
       op_writes_rf_o = 1'b1; 
     
     default:

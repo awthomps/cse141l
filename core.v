@@ -1,5 +1,5 @@
 //`include "definitions.v"
-`include "/home/janis/cse141l/definitions.v"
+`include "/home/andrei/Documents/Lab2a/cse141l/definitions.v"
 
 module core #(parameter imem_addr_width_p=10 
                        ,net_ID_p = 10'b0000000001)
