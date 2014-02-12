@@ -1,1 +1,12 @@
 .svn
+core/db/*
+core/incremental_db/*
+core/output_files/*
+core/simulation/*
+core/*.jar
+core/*.bak
+core/*.rpt
+core/*.qws
+*.hex
+*.txt
+

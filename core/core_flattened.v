@@ -1,7 +1,7 @@
 `include "definitions.v"
 
 // Flatten and unflatten structs
-module core_flattened #(parameter imem_addr_width_p=-1 
+module core_flattened #(parameter imem_addr_width_p=10 
                        ,net_ID_p = 10'b0000000001)
                        (input  clk
                        ,input  reset
