@@ -28,7 +28,7 @@ always_comb
   unique casez (instruction_i)
     `kADDU, `kSUBU, `kSLLV, `kSRAV, `kSRLV,
     `kAND,  `kOR,   `kNOR,  `kSLT,  `kSLTU, 
-    `kMOV,  `kJALR, `kLW,   `kLBU:
+    `kMOV,  `kJALR, `kLW,   `kLBU, `kBRLU: //Left rotate added
       op_writes_rf_o = 1'b1; 
     
     default:
