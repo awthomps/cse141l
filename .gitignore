@@ -7,6 +7,6 @@ core/*.jar
 core/*.bak
 core/*.rpt
 core/*.qws
-*.hex
-*.txt
+core/*.hex
+core/*.txt
 
