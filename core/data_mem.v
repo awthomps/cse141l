@@ -1,4 +1,5 @@
-`include "definitions.v"
+//`include "definitions.v"
+`include "/projects/lab2/cse141l/core/definitions.v"
 
 // This a simple memory module which simulates the cache for the core, with handshake features. 
 // Handshake method description: the core sends a request for read or write (valid signal). 

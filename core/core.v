@@ -1,4 +1,5 @@
-`include "definitions.v"
+//`include "definitions.v"
+`include "/projects/lab2/cse141l/core/definitions.v"
 
 module core #(parameter imem_addr_width_p=10
                        ,net_ID_p = 10'b0000000001)

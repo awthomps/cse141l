@@ -1,5 +1,6 @@
 //This is the ALU module of the core, op_code_e is defined in definitions.v file
-`include "definitions.v"
+//`include "definitions.v"
+`include "/projects/lab2/cse141l/core/definitions.v"
 
 module alu (input  [31:0] rd_i 
            ,input  [31:0] rs_i 
