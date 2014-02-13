@@ -504,8 +504,9 @@ CH:
     AND  $R5, $R3  // ~X and Z
     MOV  $R7, $R1
     MOV  $R8, $R5
-    JALR $R31, %XOR 
-    MOV  $R4, $R9
+//    JALR $R31, %XOR
+    XOR  $R7, $R8
+    MOV  $R4, $R7
     JALR $R31, $R30
 
 // MAJ function from SHA-256
@@ -521,11 +522,13 @@ MAJ:
    AND  $R1, $R3 // XZ
    MOV  $R7, $R1
    MOV  $R8, $R5
-   JALR $R31, %XOR 
-   MOV  $R7, $R9
+   XOR  $R7, $R8
+//   JALR $R31, %XOR 
+//   MOV  $R7, $R9
    MOV  $R8, $R6
-   JALR $R31, %XOR
-   MOV  $R4, $R9
+//   JALR $R31, %XOR
+   XOR  $R7, $R8
+   MOV  $R4, $R7
    JALR $R31, $R30
 
 // Big sigma 0 function from SHA-256 
@@ -551,11 +554,13 @@ BIGSIG0:
     ROR  $R7, $R8
 //    MOV  $R7, $R9 // term 3
     MOV  $R8, $R4
-    JALR $R31, %XOR
-    MOV  $R7, $R9
+//    JALR $R31, %XOR
+    XOR  $R7, $R8
+//    MOV  $R7, $R9
     MOV  $R8, $R3
-    JALR $R31, %XOR
-    MOV  $R2, $R9
+//    JALR $R31, %XOR
+    XOR  $R7, $R8
+    MOV  $R2, $R7
     JALR $R31, $R30
 
     
@@ -581,11 +586,13 @@ BIGSIG1:
     ROR  $R7, $R8
 //    MOV  $R7, $R9 // term 3
     MOV  $R8, $R4
-    JALR $R31, %XOR
-    MOV  $R7, $R9
+    XOR  $R7, $R8
+//    JALR $R31, %XOR
+//    MOV  $R7, $R9
     MOV  $R8, $R3
-    JALR $R31, %XOR
-    MOV  $R2, $R9
+    XOR  $R7, $R8
+//    JALR $R31, %XOR
+    MOV  $R2, $R7
     JALR $R31, $R30
 
 // Small sigma 0 function from SHA-256
@@ -603,12 +610,14 @@ SMSIG0:
 //    JALR $R31, %ROR
 //    MOV  $R7, $R9  // term 2
     MOV  $R8, $R3
-    JALR $R31, %XOR
-    MOV  $R7, $R9
+    XOR  $R7, $R8
+//    JALR $R31, %XOR
+//    MOV  $R7, $R9
     MOV  $R8, $R1
     SRLV $R8, %S3
-    JALR $R31, %XOR
-    MOV  $R2, $R9
+    XOR  $R7, $R8
+//    JALR $R31, %XOR
+    MOV  $R2, $R7
     JALR $R31, $R30
 
 
@@ -627,12 +636,14 @@ SMSIG1:
     ROR  $R7, $R8
 //    MOV  $R7, $R9  // term 2
     MOV  $R8, $R3
-    JALR $R31, %XOR
-    MOV  $R7, $R9
+    XOR  $R7, $R8
+//    JALR $R31, %XOR
+//    MOV  $R7, $R9
     MOV  $R8, $R1
     SRLV $R8, %S10
-    JALR $R31, %XOR
-    MOV  $R2, $R9
+    XOR  $R7, $R8
+//    JALR $R31, %XOR
+    MOV  $R2, $R7
     JALR $R31, $R30
 
 // EOF
