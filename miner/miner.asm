@@ -534,19 +534,22 @@ MAJ:
 BIGSIG0:
     MOV  $R7, $R1
     MOV  $R8, %S2
-    JALR $R31, %ROR
-    MOV  $R3, $R9  // term 1
+    ROR  $R7, $R8
+//    JALR $R31, %ROR
+    MOV  $R3, $R7  // term 1
     MOV  $R7, $R1
     MOV  $R8, %S3
     ADDU $R8, %S3
     ADDU $R8, %S7
-    JALR $R31, %ROR
-    MOV  $R4, $R9 // term 2
+    ROR  $R7, $R8
+//    JALR $R31, %ROR
+    MOV  $R4, $R7 // term 2
     MOV  $R7, $R1
     MOV  $R8, %S11
     ADDU $R8, %S11
-    JALR $R31, %ROR
-    MOV  $R7, $R9 // term 3
+//    JALR $R31, %ROR
+    ROR  $R7, $R8
+//    MOV  $R7, $R9 // term 3
     MOV  $R8, $R4
     JALR $R31, %XOR
     MOV  $R7, $R9
@@ -563,17 +566,20 @@ BIGSIG1:
     MOV  $R7, $R1
     MOV  $R8, %S3
     ADDU $R8, %S3
-    JALR $R31, %ROR
-    MOV  $R3, $R9 // term 1
+    ROR  $R7, $R8
+//    JALR $R31, %ROR
+    MOV  $R3, $R7 // term 1
     MOV  $R7, $R1
     MOV  $R8, %S11
-    JALR $R31, %ROR
-    MOV  $R4, $R9 // term 2
+    ROR  $R7, $R8
+//    JALR $R31, %ROR
+    MOV  $R4, $R7 // term 2
     MOV  $R7, $R1
     MOV  $R8, %S18
     ADDU $R8, %S7
-    JALR $R31, %ROR
-    MOV  $R7, $R9 // term 3
+//    JALR $R31, %ROR
+    ROR  $R7, $R8
+//    MOV  $R7, $R9 // term 3
     MOV  $R8, $R4
     JALR $R31, %XOR
     MOV  $R7, $R9
@@ -588,12 +594,14 @@ BIGSIG1:
 SMSIG0:
     MOV  $R7, $R1
     MOV  $R8, %S7
-    JALR $R31, %ROR
-    MOV  $R3, $R9  // term 1
+//    JALR $R31, %ROR
+    ROR  $R7, $R8
+    MOV  $R3, $R7  // term 1
     MOV  $R7, $R1
     MOV  $R8, %S18
-    JALR $R31, %ROR
-    MOV  $R7, $R9  // term 2
+    ROR  $R7, $R8
+//    JALR $R31, %ROR
+//    MOV  $R7, $R9  // term 2
     MOV  $R8, $R3
     JALR $R31, %XOR
     MOV  $R7, $R9
@@ -610,12 +618,14 @@ SMSIG0:
 SMSIG1:
     MOV  $R7, $R1
     MOV  $R8, %S17
-    JALR $R31, %ROR
-    MOV  $R3, $R9  // term 1
+//    JALR $R31, %ROR
+    ROR  $R7, $R8
+    MOV  $R3, $R7  // term 1
     MOV  $R7, $R1
     MOV  $R8, %S19
-    JALR $R31, %ROR
-    MOV  $R7, $R9  // term 2
+//    JALR $R31, %ROR
+    ROR  $R7, $R8
+//    MOV  $R7, $R9  // term 2
     MOV  $R8, $R3
     JALR $R31, %XOR
     MOV  $R7, $R9
