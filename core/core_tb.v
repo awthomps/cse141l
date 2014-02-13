@@ -1,4 +1,4 @@
-`include "definitions.v"
+`include "/projects/lab2/cse141l/core/definitions.v"
 
 // Comment out this line to remove disassembly support
 // You will need to do this when you run a gate-level i.e. timing simulation in ModelSim
