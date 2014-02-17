@@ -71,7 +71,7 @@ class kernel{
     public static enum opcodes {
 		ADDU, SUBU, SLLV, SRAV, SRLV, AND, OR, NOR, SLT, SLTU, MOV, LW, LBU, SW, SB, JALR,
         BEQZ, BNEQZ, BGTZ, BLTZ,
-        DONE, BAR, NOTVALID, BRLU, XOR, ROR;
+        DONE, BAR, NOTVALID, BRLU, XOR, ROR, SMS0, SMS1;
   
     /** gets an String as opcode and outputs the corresponding opcode in form of the used enumeration. */
 		public static opcodes toOpcode(String str)
@@ -113,6 +113,8 @@ class kernel{
 		opcodeTable.put("BLTZ" , "10011");
 		opcodeTable.put("DONE" , "01100");
 		opcodeTable.put("BAR"  , "01100");
+		opcodeTable.put("SMS0" , "11100");
+		opcodeTable.put("SMS1" , "11101");
 	}
 
 
@@ -135,6 +137,8 @@ class kernel{
 			case SRLV:
 			case BRLU:
 			case ROR:
+			case SMS0:
+			case SMS1:
             case AND:
             case OR:
 	    case XOR:

@@ -386,13 +386,16 @@ WLOOP:
     SUBU $R14, $R20 // W_j - 16
     ADDU $R14, %W_BASE
     LW   $R14, $R14
-    MOV  $R1, $R16
-    JALR $R30, %SMSIG1
-    MOV  $R16, $R2
 
-    MOV  $R1, $R18
-    JALR $R30, %SMSIG0
-    MOV  $R18, $R2
+    SMS1 $R16, $R16 //SMSIG1 (rs_i register unecessary for this operation)
+//    MOV  $R1, $R16
+//    JALR $R30, %SMSIG1
+//    MOV  $R16, $R2
+
+    SMS0 $R18, $R18 //SMSIG0 (rs_i register unecessary for this operation)
+//    MOV  $R1, $R18
+//    JALR $R30, %SMSIG0
+//    MOV  $R18, $R2
 
     ADDU $R16, $R18
     ADDU $R16, $R17

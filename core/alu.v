@@ -27,6 +27,9 @@ always_comb
 		`kBRLU:  result_o   = (rd_i << rs_i) | (rd_i >> (32 - rs_i));
 		`kROR:   result_o   = (rd_i >> rs_i) | (rd_i << (32 - rs_i));
 		`kXOR:   result_o   = rd_i ^ rs_i;
+		`kSMS0:  result_o = (((rd_i >> 18) | (rd_i << 14)) ^ ((rd_i >> 7) | (rd_i << 25))) ^ ($unsigned (rd_i) >> 3);
+		`kSMS1:  result_o = (((rd_i >> 19) | (rd_i << 13)) ^ ((rd_i >> 17) | (rd_i << 15))) ^ ($unsigned (rd_i) >> 10);
+
       `kBEQZ:  jump_now_o = (rd_i==32'd0)                     ? 1'b1  : 1'b0;
       `kBNEQZ: jump_now_o = (rd_i!=32'd0)                     ? 1'b1  : 1'b0;
       `kBGTZ:  jump_now_o = ($signed(rd_i)>$signed(32'd0))    ? 1'b1  : 1'b0;
