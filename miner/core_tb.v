@@ -3,7 +3,7 @@
 // Jan. 2014
 
 //`include "definitions.v"
-`include "/projects/lab2/cse141l/core/definitions.v"
+`include "/projects/lab3/cse141l/core/definitions.v"
 
 // Comment out this line to remove disassembly support
 // You will need to do this when you run a gate-level i.e. timing simulation in ModelSim
@@ -15,9 +15,9 @@
 
 // TODO: Edit the file names below to match your Assembler output files.
 // read from assembled files and store in buffers
-   `define hex_i_file "/projects/lab2/cse141l/core/miner_i.hex"
-   `define hex_r_file "/projects/lab2/cse141l/core/miner_r.hex"
-   `define hex_d_file "/projects/lab2/cse141l/core/miner_d.hex"
+   `define hex_i_file "/projects/lab3/cse141l/core/miner_i.hex"
+   `define hex_r_file "/projects/lab3/cse141l/core/miner_r.hex"
+   `define hex_d_file "/projects/lab3/cse141l/core/miner_d.hex"
 
 module core_tb();
 

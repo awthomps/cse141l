@@ -1,5 +1,5 @@
 //`include "definitions.v"
-`include "/projects/lab2/cse141l/core/definitions.v"
+`include "/projects/lab3/cse141l/core/definitions.v"
 
 // Flatten and unflatten structs
 module core_flattened #(parameter imem_addr_width_p=10 

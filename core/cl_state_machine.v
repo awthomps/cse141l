@@ -1,5 +1,5 @@
 //`include "definitions.v"
-`include "/projects/lab2/cse141l/core/definitions.v"
+`include "/projects/lab3/cse141l/core/definitions.v"
 module cl_state_machine(input instruction_s instruction_i
                        ,input state_e state_i
                        ,input exception_i

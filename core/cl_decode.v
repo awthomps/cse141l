@@ -1,5 +1,5 @@
 //`include "definitions.v"
-`include "/projects/lab2/cse141l/core/definitions.v"
+`include "/projects/lab3/cse141l/core/definitions.v"
 
 //---- Controller ----//
 module cl_decode (input instruction_s instruction_i

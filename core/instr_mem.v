@@ -1,5 +1,5 @@
 //`include "definitions.v"
-`include "/projects/lab2/cse141l/core/definitions.v"
+`include "/projects/lab3/cse141l/core/definitions.v"
 
 // A synchronous instruction memory
 
