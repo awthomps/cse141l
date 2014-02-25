@@ -1,4 +1,4 @@
-Lab 2 Part 2
+Lab 3
 ============
 
-Because Eldon and his TAs don't know how to git.
+Piplining is for winners
