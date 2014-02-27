@@ -23,6 +23,7 @@ module core_tb();
 
 logic clk, reset, reset_r;
 integer i;
+integer opCount = 0;
 
 // 5 is the op-code size
 localparam instr_length_p = rd_size_gp + rs_imm_size_gp + 5; 
@@ -66,6 +67,9 @@ debug_s debug;
 logic exception;
 
 logic [31:0] cycle_counter_r;
+
+always@(dut.core1.PC_r)
+	opCount <= opCount + 1;
 
 always_ff @(posedge clk)
   if (!reset)
