@@ -131,7 +131,7 @@ typedef struct packed {
 typedef struct packed {
 	logic imem_wen;
 	logic PC_wen_r;
-	net_reg_write_cmd;
+	logic net_reg_write_cmd;
 	logic rf_wen;
 	logic is_load_op_c;
 	instruction_s instruction;

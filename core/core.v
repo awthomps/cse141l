@@ -223,7 +223,7 @@ always_comb
 
 // Decode module
 cl_decode decode (.instruction_i(instruction)
-..................,.clk(clk)
+						,.clk(clk)
 
                   ,.is_load_op_o(is_load_op_c)
                   ,.op_writes_rf_o(op_writes_rf_c)

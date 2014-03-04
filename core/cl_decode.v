@@ -14,17 +14,56 @@ module cl_decode (input instruction_s instruction_i
                  );
 
 //controls_s register
-logic controls_s controls_r;
+controls_s controls_r;
 
 //we may have to have this controlled by something else as well
 //(in case there is a stall or something)
 always_ff @ (posedge clk)
+begin
   controls_o <= controls_r;
-
+end
+  
 always_comb
   //TODO: FILL IN YOUR CASES HERE
   unique casez (instruction_i)
-  
+    `kADDU, `kSUBU, `kSLLV, `kSRLV, `kSRAV, `kAND, `kOR, `kNOR, `kSLT:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b1;
+		 controls_r.is_load_op_c = 1'b0;
+		 controls_r.instruction = instruction_i;
+		 controls_r.op_writes_rf_c = 1'b1;
+		 controls_r.is_store_op_c = 1'b0;
+		 controls_r.is_mem_op_c = 1'b0;
+		 controls_r.is_byte_op_c = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	end
+		 
+	default:
+	begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.is_load_op_c = 1'b0;
+		 controls_r.instruction = instruction_i;
+		 controls_r.op_writes_rf_c = 1'b0;
+		 controls_r.is_store_op_c = 1'b0;
+		 controls_r.is_mem_op_c = 1'b0;
+		 controls_r.is_byte_op_c = 1'b0;
+		 controls_r.state_r = 2'b00;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'b0;
+		 controls_r.jump_now = 1'b0;
+	end
+	 
   //NOTE: im not sure what we will do for our default case
   endcase
 
