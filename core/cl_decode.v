@@ -4,6 +4,10 @@
 //---- Controller ----//
 module cl_decode (input instruction_s instruction_i
                  ,input logic clk
+					  
+					  //pipeline inputs:
+					  ,input [31:0] rs_pipe_i
+					  ,input [31:0] rd_pipe_i
 
                  ,output logic is_load_op_o
                  ,output logic op_writes_rf_o
@@ -39,7 +43,7 @@ always_comb
   unique casez (instruction_i)
     `kADDU, `kSUBU, `kSLLV, `kSRLV, `kSRAV,
     `kAND, `kOR, `kNOR, `kSLT, `kSLTU,
-    `kMOV, `kBRLU, `kROR:
+    `kMOV, `kBRLU, `kROR, `kXOR:
 	 begin
 		 controls_r.imem_wen = 1'b0;
 		 controls_r.net_reg_write_cmd = 1'b0;
@@ -48,7 +52,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bx;
 		 controls_r.PC_wen_r = 1'b0;
 	end
 //I am not so sure about this one (signal to
@@ -62,7 +66,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bX;
 		 controls_r.PC_wen_r = 1'b0;
 	 end
     `kWAIT:
@@ -74,10 +78,17 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'b1;//not so sure about this anymore
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bx;
 		 controls_r.PC_wen_r = 1'b0; //assign PC_wen = (net_PC_write_cmd_IDLE || ~stall);
 	 end
-    `kBEQZ, `kBNEQZ, `kBGTZ:
+	 
+	 /* for use with the jumps statements
+	 `kBEQZ:  jump_now_o = (rd_i==32'd0)                     ? 1'b1  : 1'b0;
+      `kBNEQZ: jump_now_o = (rd_i!=32'd0)                     ? 1'b1  : 1'b0;
+      `kBGTZ:  jump_now_o = ($signed(rd_i)>$signed(32'd0))    ? 1'b1  : 1'b0;
+      `kBLTZ:  jump_now_o = ($signed(rd_i)<$signed(32'd0))    ? 1'b1  : 1'b0;
+	 */
+    `kBEQZ:
 	 begin
 		 controls_r.imem_wen = 1'b0;
 		 controls_r.net_reg_write_cmd = 1'b0;
@@ -86,10 +97,34 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b1; //this depends on values from register memory
+		 controls_r.jump_now = (rd_pipe_i==32'd0)                     ? 1'b1  : 1'b0;
 		 controls_r.PC_wen_r = 1'b0;
 	 end
-	 // BLTZ to SMS1
+	     `kBNEQZ:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = (rd_pipe_i!=32'd0)                     ? 1'b1  : 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	 end
+	     `kBGTZ:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = ($signed(rd_pipe_i)>$signed(32'd0))    ? 1'b1  : 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	 end
+	 // BLTZ to SMS1 (XOR moved to top, maybe move SMSIG's as well later)
 	 `kBLTZ:
 	 begin
 		 controls_r.imem_wen = 1'b0;
@@ -99,23 +134,9 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b1;
+		 controls_r.jump_now = ($signed(rd_pipe_i)<$signed(32'd0))    ? 1'b1  : 1'b0;
 		 controls_r.PC_wen_r = 1'b0;
-	 end
-	 
-	`kXOR:
-	begin
-		 controls_r.imem_wen = 1'b0;
-		 controls_r.net_reg_write_cmd = 1'b0;
-	    controls_r.rf_wen = 1'b1;
-		 controls_r.state_r = 2'bXX;
-		 controls_r.exception_o = 1'b0;
-		 controls_r.stall = 1'b0;
-		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
-		 controls_r.PC_wen_r = 1'b0;
-	end
-	
+	 end	
 	`kJALR:
 	begin
 		 controls_r.imem_wen = 1'b0;
@@ -125,7 +146,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b1;
+		 controls_r.jump_now = 1'bx;
 		 controls_r.PC_wen_r = 1'b0;
 	end
 	 
@@ -138,7 +159,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bX;
 		 controls_r.PC_wen_r = 1'b0;
 	end
 	
@@ -151,7 +172,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bX;
 		 controls_r.PC_wen_r = 1'b0;
 	end
 	
@@ -164,7 +185,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bx;
 		 controls_r.PC_wen_r = 1'b0;
 	end
 	 
@@ -177,7 +198,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bx;
 		 controls_r.PC_wen_r = 1'b0;
 	 end
 	 
@@ -190,7 +211,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bx;
 		 controls_r.PC_wen_r = 1'b0;
 	 end
 	 
@@ -203,7 +224,7 @@ always_comb
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bx;
 		 controls_r.PC_wen_r = 1'b0;
 	 end
 	 
@@ -212,14 +233,14 @@ always_comb
 	default:
 	begin
 		 controls_r.imem_wen = 1'b0;
-		 controls_r.PC_wen_r = 1'b0;
 		 controls_r.net_reg_write_cmd = 1'b0;
 	    controls_r.rf_wen = 1'b0;
 		 controls_r.state_r = 2'b00;
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
 		 controls_r.net_PC_write_cmd_IDLE = 1'b0;
-		 controls_r.jump_now = 1'b0;
+		 controls_r.jump_now = 1'bX;
+		 controls_r.PC_wen_r = 1'b0;
 	end
   //NOTE: im not sure what we will do for our default case
   endcase

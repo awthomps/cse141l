@@ -224,7 +224,11 @@ always_comb
 // Decode module
 cl_decode decode (.instruction_i(instruction)
 						,.clk(clk)
-
+						
+						//get information from reg_file for pipelining
+						,.rs_pipe_i(rs_val)
+						,.rd_pipe_i(rd_val)
+						
                   ,.is_load_op_o(is_load_op_c)
                   ,.op_writes_rf_o(op_writes_rf_c)
                   ,.is_store_op_o(is_store_op_c)
