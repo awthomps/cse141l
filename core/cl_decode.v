@@ -24,19 +24,26 @@ begin
 end
   
 always_comb
+  //always done (already assigned in other always_comb blocks):
+  begin
+    controls_r.is_load_op_c = is_load_op_o;
+    controls_r.op_writes_rf_c = op_writes_rf_o;
+    controls_r.is_store_op_c = is_store_op_o;
+    controls_r.is_mem_op_c = is_mem_op_o;
+    controls_r.is_byte_op_c = is_byte_op_o;
+    controls_r.instruction = instruction_i;
+  end
+  
+always_comb
   //TODO: FILL IN YOUR CASES HERE
   unique casez (instruction_i)
-    `kADDU, `kSUBU, `kSLLV, `kSRLV, `kSRAV, `kAND, `kOR, `kNOR, `kSLT:
+    `kADDU, `kSUBU, `kSLLV, `kSRLV, `kSRAV,
+    `kAND, `kOR, `kNOR, `kSLT, `kSLTU,
+    `kMOV, `kBRLU, `kROR:
 	 begin
 		 controls_r.imem_wen = 1'b0;
 		 controls_r.net_reg_write_cmd = 1'b0;
 	    controls_r.rf_wen = 1'b1;
-		 controls_r.is_load_op_c = 1'b0;
-		 controls_r.instruction = instruction_i;
-		 controls_r.op_writes_rf_c = 1'b1;
-		 controls_r.is_store_op_c = 1'b0;
-		 controls_r.is_mem_op_c = 1'b0;
-		 controls_r.is_byte_op_c = 1'b0;
 		 controls_r.state_r = 2'bXX;
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
@@ -44,19 +51,50 @@ always_comb
 		 controls_r.jump_now = 1'b0;
 		 controls_r.PC_wen_r = 1'b0;
 	end
-		 
+//I am not so sure about this one (signal to
+//indicate an end of program):
+    `kBAR:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	 end
+    `kWAIT:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = IDLE;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'b1;//not so sure about this anymore
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0; //assign PC_wen = (net_PC_write_cmd_IDLE || ~stall);
+	 end
+    `kBEQZ, `kBNEQZ, `kBGTZ:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b1; //this depends on values from register memory
+		 controls_r.PC_wen_r = 1'b0;
+	 end
 	default:
 	begin
 		 controls_r.imem_wen = 1'b0;
 		 controls_r.PC_wen_r = 1'b0;
 		 controls_r.net_reg_write_cmd = 1'b0;
 	    controls_r.rf_wen = 1'b0;
-		 controls_r.is_load_op_c = 1'b0;
-		 controls_r.instruction = instruction_i;
-		 controls_r.op_writes_rf_c = 1'b0;
-		 controls_r.is_store_op_c = 1'b0;
-		 controls_r.is_mem_op_c = 1'b0;
-		 controls_r.is_byte_op_c = 1'b0;
 		 controls_r.state_r = 2'b00;
 		 controls_r.exception_o = 1'b0;
 		 controls_r.stall = 1'b0;
