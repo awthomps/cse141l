@@ -89,6 +89,126 @@ always_comb
 		 controls_r.jump_now = 1'b1; //this depends on values from register memory
 		 controls_r.PC_wen_r = 1'b0;
 	 end
+	 // BLTZ to SMS1
+	 `kBLTZ:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b1;
+		 controls_r.PC_wen_r = 1'b0;
+	 end
+	 
+	`kXOR:
+	begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b1;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	end
+	
+	`kJALR:
+	begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b1;
+		 controls_r.PC_wen_r = 1'b0;
+	end
+	 
+	`kLW:
+	begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	end
+	
+	`kLBU:
+	begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b1;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	end
+	
+	`kSW:
+	begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	end
+	 
+	 `kSB:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b0;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	 end
+	 
+	 `kSMS0:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b1;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	 end
+	 
+	 `kSMS1:
+	 begin
+		 controls_r.imem_wen = 1'b0;
+		 controls_r.net_reg_write_cmd = 1'b0;
+	    controls_r.rf_wen = 1'b1;
+		 controls_r.state_r = 2'bXX;
+		 controls_r.exception_o = 1'b0;
+		 controls_r.stall = 1'b0;
+		 controls_r.net_PC_write_cmd_IDLE = 1'bX;
+		 controls_r.jump_now = 1'b0;
+		 controls_r.PC_wen_r = 1'b0;
+	 end
+	 
+	 
+	 // end of controls for BLTZ to SMS1
 	default:
 	begin
 		 controls_r.imem_wen = 1'b0;
@@ -101,7 +221,6 @@ always_comb
 		 controls_r.net_PC_write_cmd_IDLE = 1'b0;
 		 controls_r.jump_now = 1'b0;
 	end
-	 
   //NOTE: im not sure what we will do for our default case
   endcase
 
