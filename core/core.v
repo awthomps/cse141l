@@ -120,6 +120,19 @@ alu alu_1 (.rd_i(rd_val_or_zero)
           ,.result_o(alu_result)
           ,.jump_now_o(jump_now)
           );
+			 
+//new pipeline module "signal_controller:
+controls_s controls_from_decode, if_id_o, id_ex_o, ex_m_o, m_wb_o;
+
+signal_controller sig_control_1(
+			.clk(clk)
+			,.newControl(controls_from_decode)
+			,.if_id_o(if_id)
+			,.id_ex_o(id_ex)
+			,.ex_m_o(ex_m)
+			,.m_wb_o(m_wb)
+);
+
 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
 // Data Memory or ALU result
@@ -234,6 +247,9 @@ cl_decode decode (.instruction_i(instruction)
                   ,.is_store_op_o(is_store_op_c)
                   ,.is_mem_op_o(is_mem_op_c)
                   ,.is_byte_op_o(is_byte_op_c)
+						
+						//to sig_control
+						,.controls_o(controls_from_decode)
                   );
 
 // State machine
