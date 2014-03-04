@@ -3,13 +3,30 @@
 
 //---- Controller ----//
 module cl_decode (input instruction_s instruction_i
+                 ,input logic clk
 
                  ,output logic is_load_op_o
                  ,output logic op_writes_rf_o
                  ,output logic is_store_op_o
                  ,output logic is_mem_op_o
                  ,output logic is_byte_op_o
+					  ,output controls_s controls_o
                  );
+
+//controls_s register
+logic controls_s controls_r;
+
+//we may have to have this controlled by something else as well
+//(in case there is a stall or something)
+always_ff @ (posedge clk)
+  controls_o <= controls_r;
+
+always_comb
+  //TODO: FILL IN YOUR CASES HERE
+  unique casez (instruction_i)
+  
+  //NOTE: im not sure what we will do for our default case
+  endcase
 
 // mem_to_reg signal, to determine whether instr 
 // xfers data from dmem to rf 
