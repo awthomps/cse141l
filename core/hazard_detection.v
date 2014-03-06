@@ -10,6 +10,7 @@
 
 module hazard_detection #(parameter reg_width =  6)
 (
+	
 	input [reg_width-1:0] dec_op_src1_i,
 	input [reg_width-1:0] dec_op_src2_i,
 	
@@ -19,8 +20,12 @@ module hazard_detection #(parameter reg_width =  6)
 	
 	input net_reg_write_cmd_i,
 	
-	output pipeline_stall_o
+	output logic pipeline_stall_o,
+	output logic IF_stall_o,
+	output logic ID_stall_o
 );
+
+
 
 
 always_comb begin
@@ -48,6 +53,14 @@ always_comb begin
 			)
 		)
 		pipeline_stall_o = 1'b1;
+		
+	IF_stall_o = 1'b0;
+	ID_stall_o = 1'b0;
+		
+	if(pipeline_stall_o) begin
+		IF_stall_o = 1'b1;
+		ID_stall_o = 1'b1;
+		end
 
 end
 

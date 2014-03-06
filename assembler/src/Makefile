@@ -17,4 +17,16 @@ miner:
 	mv miner_d.hex ../../core/miner_d.hex
 	mv miner_r.hex ../../core/miner_r.hex
 	mv miner_info.txt ../../core/miner_info.txt
-	rm VAssembler.jar	
+	rm VAssembler.jar
+
+tester:
+	-rm -f *.class
+	javac *.java
+	jar cfm VAssembler.jar Manifest.txt *.class
+	-rm -f *.class
+	java -jar VAssembler.jar ../asm_files/tester.asm tester
+	mv tester_i.hex ../../core/tester_i.hex
+	mv tester_d.hex ../../core/tester_d.hex
+	mv tester_r.hex ../../core/tester_r.hex
+	mv tester_info.txt ../../core/tester_info.txt
+	rm VAssembler.jar

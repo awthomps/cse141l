@@ -11,9 +11,9 @@
 // TODO: Edit the file names below to match your Assembler output files.
 // read from assembled files and store in buffers
 
-   `define hex_i_file "//psf/Home/Desktop/cse_141L/New141L/lab2_part1/asm/tester_i.hex"
-   `define hex_r_file "//psf/Home/Desktop/cse_141L/New141L/lab2_part1/asm/tester_r.hex"
-   `define hex_d_file "//psf/Home/Desktop/cse_141L/New141L/lab2_part1/asm/tester_d.hex"
+   `define hex_i_file "/projects/lab3/cse141l/core/tester_i.hex"
+   `define hex_r_file "/projects/lab3/cse141l/core/tester_r.hex"
+   `define hex_d_file "/projects/lab3/cse141l/core/tester_d.hex"
 
 
 

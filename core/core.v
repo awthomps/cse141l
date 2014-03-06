@@ -17,6 +17,8 @@ module core #(parameter imem_addr_width_p=10
              ,output debug_s                    debug_o
              ,output logic [31:0]               data_mem_addr
              );
+				 
+
 
 //---- Adresses and Data ----//
 // Ins. memory address signals
@@ -94,6 +96,15 @@ instr_mem #(.addr_width_p(imem_addr_width_p)) imem
            ,.wen_i(imem_wen)
            ,.instruction_o(imem_out)
            );
+			  
+//IF to ID:
+instruction_s imem_instructionQ;
+logic imem_stall;
+
+always_ff @(posedge clk)
+	if(~imem_stall) begin //if(!imem_stall)
+			imem_instructionQ <= imem_out;
+	end
 
 // Since imem has one cycle delay and we send next cycle's address, PC_n,
 // if the PC is not written, the instruction must not change
@@ -134,16 +145,19 @@ signal_controller sig_control_1(
 );
 
 //Add hazard detection here
-/*
+
+logic pipeline_stall;
+
 hazard_detection haz_det_1(
-			.dec_op_src1_i({1'b0,id_ex_o.instruction.rd)
-			,.dec_op_src2_i(id_ex_o.instruction.rs_imm)
-			,.ex_op_dest_i()
-			,.m_op_dest_i()
-			,.wb_op_dest_i()
-			,.net_reg_write_cmd_i()
-			,.output pipeline_stall_o()
-);*/
+			//.dec_op_src1_i({1'b0,id_ex_o.instruction.rd)
+			//,.dec_op_src2_i(id_ex_o.instruction.rs_imm)
+			//,.ex_op_dest_i()
+			//,.m_op_dest_i()
+			//,.wb_op_dest_i()
+			//,.net_reg_write_cmd_i()
+			.pipeline_stall_o(pipeline_stall)
+			,.IF_stall_o(imem_stall)
+);
 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
 // Data Memory or ALU result
