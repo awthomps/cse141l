@@ -1,5 +1,13 @@
+/**
+ * Author: Andrei Thompson
+ * Team: Janis and Alex
+ * Written on 3/4/2014
+ * Lab 3 
+ */
 `include "/projects/lab3/cse141l/core/definitions.v"
 
+
+//TODO: add a reset capability to this module
 
 /*
 typedef struct packed {

@@ -133,6 +133,17 @@ signal_controller sig_control_1(
 			,.m_wb_o(m_wb)
 );
 
+//Add hazard detection here
+/*
+hazard_detection haz_det_1(
+			.dec_op_src1_i({1'b0,id_ex_o.instruction.rd)
+			,.dec_op_src2_i(id_ex_o.instruction.rs_imm)
+			,.ex_op_dest_i()
+			,.m_op_dest_i()
+			,.wb_op_dest_i()
+			,.net_reg_write_cmd_i()
+			,.output pipeline_stall_o()
+);*/
 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
 // Data Memory or ALU result
