@@ -66,6 +66,9 @@ logic exception_n;
 // State machine signals
 state_e state_r,state_n;
 
+// Between stage register data:
+controls_s if_id, id_ex, ex_m, m_wb;
+
 //---- network and barrier signals ----//
 instruction_s net_instruction;
 logic [mask_length_gp-1:0] barrier_r,      barrier_n,
@@ -98,17 +101,25 @@ instr_mem #(.addr_width_p(imem_addr_width_p)) imem
            );
 			  
 //IF to ID:
-instruction_s imem_instructionQ;
+//instruction_s imem_instructionQ;
 logic imem_stall;
+instruction_s next_inst;
+
+
+assign next_inst = (PC_wen_r) ? imem_out : instruction_r;
 
 always_ff @(posedge clk)
+begin
 	if(~imem_stall) begin //if(!imem_stall)
-			imem_instructionQ <= imem_out;
+			if_id.inst <= next_inst;
 	end
-
+end
+	
 // Since imem has one cycle delay and we send next cycle's address, PC_n,
 // if the PC is not written, the instruction must not change
-assign instruction = (PC_wen_r) ? imem_out : instruction_r;
+
+//note: this is originally supposed to be "assign instruction = (PC_wen_r) ? imem_out : instruction_r;"
+assign instruction = if_id.inst;
 
 // Register file
 reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
@@ -132,13 +143,11 @@ alu alu_1 (.rd_i(rd_val_or_zero)
           ,.jump_now_o(jump_now)
           );
 			 
-//new pipeline module "signal_controller:
-controls_s controls_from_decode, if_id_o, id_ex_o, ex_m_o, m_wb_o;
+//new pipeline module "signal_controller":
 
 signal_controller sig_control_1(
 			.clk(clk)
-			,.newControl(controls_from_decode)
-			,.if_id_o(if_id)
+			,.newControl(if_id)
 			,.id_ex_o(id_ex)
 			,.ex_m_o(ex_m)
 			,.m_wb_o(m_wb)
@@ -156,7 +165,7 @@ hazard_detection haz_det_1(
 			//,.wb_op_dest_i()
 			//,.net_reg_write_cmd_i()
 			.pipeline_stall_o(pipeline_stall)
-			,.IF_stall_o(imem_stall)
+			,.IF_ID_stall_o(imem_stall)
 );
 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
@@ -261,20 +270,11 @@ always_comb
 
 // Decode module
 cl_decode decode (.instruction_i(instruction)
-						,.clk(clk)
-						
-						//get information from reg_file for pipelining
-						,.rs_pipe_i(rs_val)
-						,.rd_pipe_i(rd_val)
-						
                   ,.is_load_op_o(is_load_op_c)
                   ,.op_writes_rf_o(op_writes_rf_c)
                   ,.is_store_op_o(is_store_op_c)
                   ,.is_mem_op_o(is_mem_op_c)
                   ,.is_byte_op_o(is_byte_op_c)
-						
-						//to sig_control
-						,.controls_o(controls_from_decode)
                   );
 
 // State machine

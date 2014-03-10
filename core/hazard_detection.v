@@ -21,8 +21,10 @@ module hazard_detection #(parameter reg_width =  6)
 	input net_reg_write_cmd_i,
 	
 	output logic pipeline_stall_o,
-	output logic IF_stall_o,
-	output logic ID_stall_o
+	output logic IF_ID_stall_o,
+	output logic ID_EX_stall_o,
+	output logic EX_M_stall_o,
+	output logic M_WB_stall_o
 );
 
 
@@ -54,12 +56,16 @@ always_comb begin
 		)
 		pipeline_stall_o = 1'b1;
 		
-	IF_stall_o = 1'b0;
-	ID_stall_o = 1'b0;
+	IF_ID_stall_o = 1'b0;
+	ID_EX_stall_o = 1'b0;
+	EX_M_stall_o = 1'b0;
+	M_WB_stall_o = 1'b0;
 		
 	if(pipeline_stall_o) begin
-		IF_stall_o = 1'b1;
-		ID_stall_o = 1'b1;
+		IF_ID_stall_o = 1'b1;
+		ID_EX_stall_o = 1'b1;
+		EX_M_stall_o = 1'b1;
+		M_WB_stall_o = 1'b1;
 		end
 
 end

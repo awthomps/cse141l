@@ -28,9 +28,11 @@ output controls_s m_wb_o
 
 controls_buddle_s array;
 //for now, don't use if_id
+
+
 always_comb
 begin
-	if_id_o = array.if_id;
+	//if_id_o = array.if_id;
 	id_ex_o = array.id_ex;
 	ex_m_o = array.ex_m;
 	m_wb_o = array.m_wb;

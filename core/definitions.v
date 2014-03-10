@@ -134,7 +134,7 @@ typedef struct packed {
 	logic net_reg_write_cmd;
 	logic rf_wen;
 	logic is_load_op_c;
-	instruction_s instruction;
+	instruction_s inst;
 	logic op_writes_rf_c;
 	logic is_store_op_c;
 	logic is_mem_op_c;

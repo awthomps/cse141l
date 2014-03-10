@@ -3,7 +3,7 @@
 // Comment out this line to remove disassembly support
 // You will need to do this when you run a gate-level i.e. timing simulation in ModelSim
 
-`define DISASSEMBLE
+//`define DISASSEMBLE
 
 `define half_period 1.5
 //`timescale 100 ns / 1 ns
@@ -117,9 +117,6 @@ assign data_mem_addr = select ? data_mem_addr1 : data_mem_addr2;
 
 // TODO: Edit the file names below to match your Assembler output files.
 // read from assembled files and store in buffers
-   `define hex_i_file ""
-   `define hex_r_file ""
-   `define hex_d_file ""
 
   initial begin
 
