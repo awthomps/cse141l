@@ -20,6 +20,7 @@
 module core_tb();
 
 logic clk, reset, reset_r;
+logic [9:0] PC_state;
 integer i;
 
 // 5 is the op-code size
@@ -32,7 +33,7 @@ reg [instr_length_p-1:0] ins_packet [instr_buffer_size_p-1:0];
 reg [31:0] data_packet [data_buffer_size_p-1:0];
 reg [reg_packet_width_p-1:0] reg_packet [(2**rs_imm_size_gp)-1:0];
 
-instruction_s instruct_t;
+instruction_s instruct_t, if_id_instr;
 
 // Data memory connected to core
 mem_in_s mem_in2,mem_in1, mem_in;
@@ -64,6 +65,10 @@ debug_s debug;
 logic exception;
 
 logic [31:0] cycle_counter_r;
+
+//check PC value:
+assign PC_state = dut.core1.PC_n;
+assign if_id_instr = dut.core1.next_inst;
 
 always_ff @(posedge clk)
   if (!reset)

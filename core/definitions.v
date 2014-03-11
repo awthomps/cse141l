@@ -129,6 +129,7 @@ typedef struct packed {
 } debug_s;
 
 typedef struct packed {
+	logic PC;
 	logic imem_wen;
 	logic PC_wen_r;
 	logic net_reg_write_cmd;

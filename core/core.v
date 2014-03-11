@@ -107,11 +107,17 @@ instruction_s next_inst;
 
 
 assign next_inst = (PC_wen_r) ? imem_out : instruction_r;
+assign next_PC = PC_n;
 
 always_ff @(posedge clk)
 begin
 	if(~imem_stall) begin //if(!imem_stall)
 			if_id.inst <= next_inst;
+			if_id.PC <= next_PC;
+	end
+	else begin
+			if_id.inst <= if_id.inst;
+			if_id.PC <= if_id.PC;
 	end
 end
 	
@@ -165,7 +171,7 @@ hazard_detection haz_det_1(
 			//,.wb_op_dest_i()
 			//,.net_reg_write_cmd_i()
 			.pipeline_stall_o(pipeline_stall)
-			,.IF_ID_stall_o(imem_stall)
+			//,.IF_ID_stall_o(imem_stall)
 );
 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
@@ -187,24 +193,42 @@ always_comb
 
 // Determine next PC
 assign pc_plus1     = PC_r + 1'b1;
-assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_r);
-
+assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_r);//$signed(if_id.inst.rs_imm) + $signed(if_id.PC);//
 // Next pc is based on network or the instruction
 always_comb
   begin
     PC_n = pc_plus1;
+	 
     if (net_PC_write_cmd_IDLE)
+	  begin
       PC_n = net_packet_i.net_addr;
+		imem_stall = 1'b0;
+		end
     else
       unique casez (instruction)
         `kJALR:
+			begin
           PC_n = alu_result[0+:imem_addr_width_p];
+			 imem_stall = 1'b0;
+			 end
 
         `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
           if (jump_now)
+			 begin
+				imem_stall = 1'b1; //stall imem
             PC_n = imm_jump_add;
+			 end
+			 else
+			 begin
+				imem_stall = 1'b0;
+				PC_n = pc_plus1;
+			 end
 
-        default: begin end
+        default: 
+		  begin
+			imem_stall = 1'b0;
+			PC_n = pc_plus1;
+		  end
       endcase
   end
 
@@ -228,7 +252,7 @@ always_ff @ (posedge clk)
     else
       begin
         if (PC_wen)
-          PC_r         <= PC_n;
+          PC_r         <= if_id.PC;//PC_n;
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
         state_r        <= state_n;
