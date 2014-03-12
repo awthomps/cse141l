@@ -17,7 +17,6 @@ module core #(parameter imem_addr_width_p=10
              ,output debug_s                    debug_o
              ,output logic [31:0]               data_mem_addr
              );
-				 
 
 
 //---- Adresses and Data ----//
@@ -36,6 +35,11 @@ logic [($bits(instruction.rs_imm))-1:0] rd_addr;
 
 // Data for Reg. File signals
 logic [31:0] rf_wd;
+
+// ---- VARS ADDED IN ---- //
+logic is_jump_or_branch;
+logic same_instr;
+logic branching_stall;
 
 //---- Control signals ----//
 // ALU output to determin whether to jump or not
@@ -66,14 +70,14 @@ logic exception_n;
 // State machine signals
 state_e state_r,state_n;
 
-// Between stage register data:
-controls_s if_id, id_ex, ex_m, m_wb;
-
 //---- network and barrier signals ----//
 instruction_s net_instruction;
 logic [mask_length_gp-1:0] barrier_r,      barrier_n,
                            barrier_mask_r, barrier_mask_n;
 
+// ---- PIPELINING STRUCTS ---- //
+//controls_s if_id, id_ex, ex_m, m_wb;
+									
 //---- Connection to external modules ----//
 
 // Suppress warnings
@@ -99,33 +103,10 @@ instr_mem #(.addr_width_p(imem_addr_width_p)) imem
            ,.wen_i(imem_wen)
            ,.instruction_o(imem_out)
            );
-			  
-//IF to ID:
-//instruction_s imem_instructionQ;
-logic imem_stall;
-instruction_s next_inst;
 
-
-assign next_inst = (PC_wen_r) ? imem_out : instruction_r;
-assign next_PC = PC_n;
-
-always_ff @(posedge clk)
-begin
-	if(~imem_stall) begin //if(!imem_stall)
-			if_id.inst <= next_inst;
-			if_id.PC <= next_PC;
-	end
-	else begin
-			if_id.inst <= if_id.inst;
-			if_id.PC <= if_id.PC;
-	end
-end
-	
 // Since imem has one cycle delay and we send next cycle's address, PC_n,
 // if the PC is not written, the instruction must not change
-
-//note: this is originally supposed to be "assign instruction = (PC_wen_r) ? imem_out : instruction_r;"
-assign instruction = if_id.inst;
+assign instruction = (PC_wen_r) ? imem_out : instruction_r;
 
 // Register file
 reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
@@ -148,32 +129,17 @@ alu alu_1 (.rd_i(rd_val_or_zero)
           ,.result_o(alu_result)
           ,.jump_now_o(jump_now)
           );
-			 
-//new pipeline module "signal_controller":
 
+// ---- SIGNAL CONTROLLER MODULE ---- //
+/*
 signal_controller sig_control_1(
-			.clk(clk)
-			,.newControl(if_id)
-			,.id_ex_o(id_ex)
-			,.ex_m_o(ex_m)
-			,.m_wb_o(m_wb)
+								.clk(clk)
+								,.newControl(if_id)
+								,.id_ex_o(id_ex)
+								,.ex_m_o(ex_m)
+								,.m_wb_o(m_wb)
 );
-
-//Add hazard detection here
-
-logic pipeline_stall;
-
-hazard_detection haz_det_1(
-			//.dec_op_src1_i({1'b0,id_ex_o.instruction.rd)
-			//,.dec_op_src2_i(id_ex_o.instruction.rs_imm)
-			//,.ex_op_dest_i()
-			//,.m_op_dest_i()
-			//,.wb_op_dest_i()
-			//,.net_reg_write_cmd_i()
-			.pipeline_stall_o(pipeline_stall)
-			//,.IF_ID_stall_o(imem_stall)
-);
-
+*/			 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
 // Data Memory or ALU result
 always_comb
@@ -193,45 +159,28 @@ always_comb
 
 // Determine next PC
 assign pc_plus1     = PC_r + 1'b1;
-assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_r);//$signed(if_id.inst.rs_imm) + $signed(if_id.PC);//
+assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_r);
+
 // Next pc is based on network or the instruction
 always_comb
   begin
     PC_n = pc_plus1;
-	 
     if (net_PC_write_cmd_IDLE)
-	  begin
       PC_n = net_packet_i.net_addr;
-		imem_stall = 1'b0;
-		end
     else
       unique casez (instruction)
         `kJALR:
-			begin
           PC_n = alu_result[0+:imem_addr_width_p];
-			 imem_stall = 1'b0;
-			 end
 
         `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
           if (jump_now)
-			 begin
-				imem_stall = 1'b1; //stall imem
             PC_n = imm_jump_add;
-			 end
-			 else
-			 begin
-				imem_stall = 1'b0;
-				PC_n = pc_plus1;
-			 end
 
-        default: 
-		  begin
-			imem_stall = 1'b0;
-			PC_n = pc_plus1;
-		  end
+        default: begin end
       endcase
   end
 
+  // add in control signal to stall it when branching
 assign PC_wen = (net_PC_write_cmd_IDLE || ~stall);
 
 // Sequential part, including PC, barrier, exception and state
@@ -252,7 +201,7 @@ always_ff @ (posedge clk)
     else
       begin
         if (PC_wen)
-          PC_r         <= if_id.PC;//PC_n;
+          PC_r         <= PC_n;
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
         state_r        <= state_n;
@@ -268,7 +217,7 @@ always_ff @ (posedge clk)
 assign stall_non_mem = (net_reg_write_cmd && op_writes_rf_c)
                     || (net_imem_write_cmd);
 // Stall if LD/ST still active; or in non-RUN state
-assign stall = stall_non_mem || (mem_stage_n != 0) || (state_r != RUN);
+assign stall = stall_non_mem || (mem_stage_n != 0) || (state_r != RUN) || branching_stall;
 
 // Launch LD/ST
 assign valid_to_mem_c = is_mem_op_c & (mem_stage_r < 2'b10);
@@ -294,6 +243,7 @@ always_comb
 
 // Decode module
 cl_decode decode (.instruction_i(instruction)
+
                   ,.is_load_op_o(is_load_op_c)
                   ,.op_writes_rf_o(op_writes_rf_c)
                   ,.is_store_op_o(is_store_op_c)
@@ -310,6 +260,19 @@ cl_state_machine state_machine (.instruction_i(instruction)
                                ,.state_o(state_n)
                                );
 
+// ---- VARS INITIALIZED ---- //
+always_comb
+	unique casez (instruction_r)
+		`kBLTZ, `kBGTZ, `kBNEQZ, `kBEQZ, `kJALR:
+			is_jump_or_branch = 1'b1;
+		default:
+			is_jump_or_branch = 1'b0;
+	endcase
+
+assign same_instr = (instruction_r == instruction) ? 1'b1: 1'b0;
+
+assign branching_stall = is_jump_or_branch && same_instr;
+							 
 //---- Datapath with network ----//
 // Detect a valid packet for this core
 assign net_ID_match = (net_packet_i.ID==net_ID_p);

@@ -20,7 +20,7 @@ typedef struct packed {
 module signal_controller( input clk,
 input controls_s newControl,
 
-output controls_s if_id_o,
+//output controls_s if_id_o,
 output controls_s id_ex_o,
 output controls_s ex_m_o,
 output controls_s m_wb_o

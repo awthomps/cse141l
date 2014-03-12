@@ -5,7 +5,7 @@
  * ID: A09597901
  * 1/14/2014
  */
- 
+
 //changed things in file to correspond to lab2 core.v so that core.v deos not
 //have to be changed such as: variables and one parameter parameter to correspond
 module reg_file#(parameter addr_width_p = 6, parameter W1 = 32)

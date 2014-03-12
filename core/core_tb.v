@@ -3,8 +3,6 @@
 // Comment out this line to remove disassembly support
 // You will need to do this when you run a gate-level i.e. timing simulation in ModelSim
 
-//`define DISASSEMBLE
-
 `define half_period 1.5
 //`timescale 100 ns / 1 ns
 
@@ -20,7 +18,6 @@
 module core_tb();
 
 logic clk, reset, reset_r;
-logic [9:0] PC_state;
 integer i;
 
 // 5 is the op-code size
@@ -33,7 +30,7 @@ reg [instr_length_p-1:0] ins_packet [instr_buffer_size_p-1:0];
 reg [31:0] data_packet [data_buffer_size_p-1:0];
 reg [reg_packet_width_p-1:0] reg_packet [(2**rs_imm_size_gp)-1:0];
 
-instruction_s instruct_t, if_id_instr;
+instruction_s instruct_t;
 
 // Data memory connected to core
 mem_in_s mem_in2,mem_in1, mem_in;
@@ -65,10 +62,6 @@ debug_s debug;
 logic exception;
 
 logic [31:0] cycle_counter_r;
-
-//check PC value:
-assign PC_state = dut.core1.PC_n;
-assign if_id_instr = dut.core1.next_inst;
 
 always_ff @(posedge clk)
   if (!reset)
@@ -119,9 +112,6 @@ assign data_mem_addr = select ? data_mem_addr1 : data_mem_addr2;
                     end                                                 \
                end                                                      \
           end while (0)
-
-// TODO: Edit the file names below to match your Assembler output files.
-// read from assembled files and store in buffers
 
   initial begin
 

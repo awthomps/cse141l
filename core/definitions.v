@@ -128,30 +128,31 @@ typedef struct packed {
         logic [mask_length_gp-1:0] barrier_r_f;
 } debug_s;
 
-typedef struct packed {
-	logic PC;
-	logic imem_wen;
-	logic PC_wen_r;
-	logic net_reg_write_cmd;
-	logic rf_wen;
-	logic is_load_op_c;
-	instruction_s inst;
-	logic op_writes_rf_c;
-	logic is_store_op_c;
-	logic is_mem_op_c;
-	logic is_byte_op_c;
-	logic [1:0] state_r;
-	logic exception_o;
-	logic stall;
-	logic net_PC_write_cmd_IDLE;
-	logic jump_now;
-} controls_s;
-
-typedef struct packed {
-	controls_s if_id;
-	controls_s id_ex;
-	controls_s ex_m;
-	controls_s m_wb;
+typedef struct packed { 
+			logic PC; 
+			logic imem_wen; 
+			logic PC_wen_r; 
+			logic net_reg_write_cmd; 
+			logic rf_wen; 
+			logic is_load_op_c; 
+			instruction_s inst; 
+			logic op_writes_rf_c; 
+			logic is_store_op_c; 
+			logic is_mem_op_c; 
+			logic is_byte_op_c; 
+			logic [1:0] state_r; 
+			logic exception_o; 
+			logic stall; 
+			logic net_PC_write_cmd_IDLE; 
+			logic jump_now; 
+} controls_s; 
+			
+typedef struct packed { 
+			controls_s if_id; 
+			controls_s id_ex; 
+			controls_s ex_m; 
+			controls_s m_wb; 
 } controls_buddle_s;
+
 
 `endif
