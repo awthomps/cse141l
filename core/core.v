@@ -1,6 +1,7 @@
 //`include "definitions.v"
 `include "/projects/lab3/cse141l/core/definitions.v"
 
+
 module core #(parameter imem_addr_width_p=10
                        ,net_ID_p = 10'b0000000001)
              (input  clk
@@ -18,17 +19,18 @@ module core #(parameter imem_addr_width_p=10
              ,output logic [31:0]               data_mem_addr
              );
 
-
 //---- Adresses and Data ----//
 // Ins. memory address signals
-logic [imem_addr_width_p-1:0] PC_r, PC_n,
+logic [imem_addr_width_p-1:0] PC_r, PC_rr, PC_rrr, PC_re, PC_n, IF_stage,
                               pc_plus1, imem_addr,
                               imm_jump_add;
 // Ins. memory output
-instruction_s instruction, imem_out, instruction_r;
+instruction_s instruction, imem_out, instruction_r, inT;
 
 // Result of ALU, Register file outputs, Data memory output data
-logic [31:0] alu_result, rs_val_or_zero, rd_val_or_zero, rs_val, rd_val;
+logic [31:0] alu_result, alu_resultt, rs_val_or_zero, rs_val_or_zeroo,
+rd_val_or_zero, rd_val_or_zeroo,
+rs_val, rd_val, reg_20_val;
 
 // Reg. File address
 logic [($bits(instruction.rs_imm))-1:0] rd_addr;
@@ -36,18 +38,14 @@ logic [($bits(instruction.rs_imm))-1:0] rd_addr;
 // Data for Reg. File signals
 logic [31:0] rf_wd;
 
-// ---- VARS ADDED IN ---- //
-logic is_jump_or_branch;
-logic same_instr;
-logic branching_stall;
-
 //---- Control signals ----//
 // ALU output to determin whether to jump or not
-logic jump_now;
+logic jump_now, jump_noww;
 
 // controller output signals
-logic is_load_op_c,  op_writes_rf_c, valid_to_mem_c,
-      is_store_op_c, is_mem_op_c,    PC_wen,
+logic is_load_op_c,  op_writes_rf_c, valid_to_mem_c, branch_taken,
+      is_store_op_c, is_mem_op_c, PC_wen,  IDEX_en, instruction_fetch_en1, 
+		ex_mem_en, ex_mem_en1,
       is_byte_op_c,  PC_wen_r;
 
 // Handshak protocol signals for memory
@@ -70,14 +68,63 @@ logic exception_n;
 // State machine signals
 state_e state_r,state_n;
 
-//---- network and barrier signals ----//
+///////////////////////////////IF/ID stage//////////////////////////////////////////////
+assign instruction_fetch_en1 = (~stall);
+always_ff @(posedge clk) begin
+if(!reset)
+begin
+instruction <= 0;
+PC_r <= 0;
+end
+else if(instruction_fetch_en1)
+  begin
+    instruction <= inT;   
+	  PC_r <= PC_rr;
+  end
+end
+
+//////////////////////////////ID/EX/////////////////////////////////////////////
+assign IDEX_en = ( ~stall || (instruction != `kLW) || (instruction !=`kLBU));
+always_ff @(posedge clk) begin
+if(!reset)
+begin
+  rs_val_or_zero<= 0;
+  PC_rrr <= 0;
+  rd_val_or_zero<=0;
+end
+else if(IDEX_en)
+  begin
+     rs_val_or_zero <=rs_val_or_zeroo;
+	   PC_rrr <= PC_r;
+	   rd_val_or_zero<=rd_val_or_zeroo;
+  end
+end
+
+//////////////////////////////EX/MEM/////////////////////////////////////////////
+assign ex_mem_en1 = ( ~stall);
+always_ff @(posedge clk) begin
+if(!reset)
+begin
+alu_result <= 0;
+PC_re <= 0;
+jump_now <=0;
+end
+else if(ex_mem_en1)
+  begin
+    alu_result <= alu_resultt;
+    jump_now <=jump_noww;  
+  	 PC_re <= PC_rrr;
+  end
+end
+
+
+//--------------------------------------stage & stall-----------------------------------------------------//
+
+//---- network and barrier signals ---//
 instruction_s net_instruction;
 logic [mask_length_gp-1:0] barrier_r,      barrier_n,
                            barrier_mask_r, barrier_mask_n;
 
-// ---- PIPELINING STRUCTS ---- //
-//controls_s if_id, id_ex, ex_m, m_wb;
-									
 //---- Connection to external modules ----//
 
 // Suppress warnings
@@ -106,8 +153,8 @@ instr_mem #(.addr_width_p(imem_addr_width_p)) imem
 
 // Since imem has one cycle delay and we send next cycle's address, PC_n,
 // if the PC is not written, the instruction must not change
-assign instruction = (PC_wen_r) ? imem_out : instruction_r;
-
+//assign instruction = (PC_wen_r) ? imem_out : instruction_r;//////////////////////////////////
+assign inT = (PC_wen_r) ? imem_out : instruction_r;
 // Register file
 reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
           (.clk(clk)
@@ -117,29 +164,21 @@ reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
           ,.write_data_i(rf_wd)
           ,.rs_val_o(rs_val)
           ,.rd_val_o(rd_val)
+          //,.reg_20_val_o(reg_20_val)
           );
 
-assign rs_val_or_zero = instruction.rs_imm ? rs_val : 32'b0;
-assign rd_val_or_zero = rd_addr            ? rd_val : 32'b0;
+assign rs_val_or_zeroo = instruction.rs_imm ? rs_val : 32'b0;
+assign rd_val_or_zeroo = rd_addr            ? rd_val : 32'b0;
 
 // ALU
 alu alu_1 (.rd_i(rd_val_or_zero)
           ,.rs_i(rs_val_or_zero)
+          //,.reg_20_i(reg_20_val)
           ,.op_i(instruction)
-          ,.result_o(alu_result)
-          ,.jump_now_o(jump_now)
+          ,.result_o(alu_resultt)
+          ,.jump_now_o(jump_noww)
           );
 
-// ---- SIGNAL CONTROLLER MODULE ---- //
-/*
-signal_controller sig_control_1(
-								.clk(clk)
-								,.newControl(if_id)
-								,.id_ex_o(id_ex)
-								,.ex_m_o(ex_m)
-								,.m_wb_o(m_wb)
-);
-*/			 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
 // Data Memory or ALU result
 always_comb
@@ -152,14 +191,14 @@ always_comb
 
     else if (is_load_op_c)
       rf_wd = from_mem_i.read_data;
-
+      
     else
       rf_wd = alu_result;
   end
 
 // Determine next PC
-assign pc_plus1     = PC_r + 1'b1;
-assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_r);
+assign pc_plus1     = PC_rr + 1'b1;
+assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_rr);
 
 // Next pc is based on network or the instruction
 always_comb
@@ -171,16 +210,13 @@ always_comb
       unique casez (instruction)
         `kJALR:
           PC_n = alu_result[0+:imem_addr_width_p];
-
         `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
           if (jump_now)
             PC_n = imm_jump_add;
-
         default: begin end
       endcase
   end
 
-  // add in control signal to stall it when branching
 assign PC_wen = (net_PC_write_cmd_IDLE || ~stall);
 
 // Sequential part, including PC, barrier, exception and state
@@ -188,7 +224,7 @@ always_ff @ (posedge clk)
   begin
     if (!reset)
       begin
-        PC_r            <= 0;
+        PC_rr            <= 0;
         barrier_mask_r  <= {(mask_length_gp){1'b0}};
         barrier_r       <= {(mask_length_gp){1'b0}};
         state_r         <= IDLE;
@@ -201,7 +237,7 @@ always_ff @ (posedge clk)
     else
       begin
         if (PC_wen)
-          PC_r         <= PC_n;
+          PC_rr         <= PC_n;
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
         state_r        <= state_n;
@@ -217,7 +253,7 @@ always_ff @ (posedge clk)
 assign stall_non_mem = (net_reg_write_cmd && op_writes_rf_c)
                     || (net_imem_write_cmd);
 // Stall if LD/ST still active; or in non-RUN state
-assign stall = stall_non_mem || (mem_stage_n != 0) || (state_r != RUN) || branching_stall;
+assign stall = stall_non_mem || (mem_stage_n != 0) || (state_r != RUN);
 
 // Launch LD/ST
 assign valid_to_mem_c = is_mem_op_c & (mem_stage_r < 2'b10);
@@ -243,7 +279,6 @@ always_comb
 
 // Decode module
 cl_decode decode (.instruction_i(instruction)
-
                   ,.is_load_op_o(is_load_op_c)
                   ,.op_writes_rf_o(op_writes_rf_c)
                   ,.is_store_op_o(is_store_op_c)
@@ -260,19 +295,6 @@ cl_state_machine state_machine (.instruction_i(instruction)
                                ,.state_o(state_n)
                                );
 
-// ---- VARS INITIALIZED ---- //
-always_comb
-	unique casez (instruction_r)
-		`kBLTZ, `kBGTZ, `kBNEQZ, `kBEQZ, `kJALR:
-			is_jump_or_branch = 1'b1;
-		default:
-			is_jump_or_branch = 1'b0;
-	endcase
-
-assign same_instr = (instruction_r == instruction) ? 1'b1: 1'b0;
-
-assign branching_stall = is_jump_or_branch && same_instr;
-							 
 //---- Datapath with network ----//
 // Detect a valid packet for this core
 assign net_ID_match = (net_packet_i.ID==net_ID_p);
