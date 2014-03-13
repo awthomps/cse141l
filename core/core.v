@@ -8,6 +8,9 @@
 // -make sure correct signals going into barrier calculations
 // -make sure correct instruction is being used to calculate the next PC
 // -send down the rf_wen signal to be used in the last stage
+// -in ID/EX, make sure that the IDEX_en is getting all the correct checks for the instructions
+//		that amend the registers.
+// -remove the forwarding for now
 
 module core #(parameter imem_addr_width_p=10
                        ,net_ID_p = 10'b0000000001)
@@ -112,7 +115,7 @@ else if(IDEX_en)
 		state_id_ex   <= state_n;
 		de_control_id_ex <= de_control_n;
 	   rd_val_or_zero<=rd_val_or_zero_n;
-		instruction_id_ex <= instruction;
+		instruction_id_ex <= instruction;//if_id
   end
 end
 
@@ -160,7 +163,7 @@ assign to_mem_o = '{write_data    : rs_val_or_zero
 assign data_mem_addr = alu_result_ex_m;
 
 // DEBUG Struct
-assign debug_o = {PC_if_id, instruction, state_ex_m, barrier_mask_r, barrier_r};
+assign debug_o = {PC_if_id, instruction_ex_m, state_ex_m, barrier_mask_r, barrier_r};
 
 // Insruction memory
 instr_mem #(.addr_width_p(imem_addr_width_p)) imem
@@ -178,7 +181,7 @@ assign inT = (PC_wen_r) ? imem_out : instruction_r;
 // Register file
 reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
           (.clk(clk)
-          ,.rs_addr_i(instruction.rs_imm)
+          ,.rs_addr_i(instruction.rs_imm) //if_id
           ,.rd_addr_i(rd_addr)
           ,.wen_i(rf_wen)
           ,.write_data_i(rf_wd)
@@ -187,14 +190,14 @@ reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
           //,.reg_20_val_o(reg_20_val)
           );
 
-assign rs_val_or_zero_n = instruction.rs_imm ? rs_val : 32'b0;
+assign rs_val_or_zero_n = instruction.rs_imm ? rs_val : 32'b0; //if_id
 assign rd_val_or_zero_n = rd_addr            ? rd_val : 32'b0;
 
 // ALU
 alu alu_1 (.rd_i(rd_val_or_zero)
           ,.rs_i(rs_val_or_zero)
           //,.reg_20_i(reg_20_val)
-          ,.op_i(instruction)
+          ,.op_i(instruction_id_ex)
           ,.result_o(alu_result_n)
           ,.jump_now_o(jump_now)
           );
@@ -206,7 +209,7 @@ always_comb
     if (net_reg_write_cmd)
       rf_wd = net_packet_i.net_data;
 
-    else if (instruction==?`kJALR)
+    else if (instruction_ex_m==?`kJALR)
       rf_wd = pc_plus1;
 
     else if (de_control_ex_m.is_load_op_c)
@@ -218,7 +221,7 @@ always_comb
 
 // Determine next PC
 assign pc_plus1     = PC_r + 1'b1;
-assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_r);
+assign imm_jump_add = $signed(instruction_id_ex.rs_imm)  + $signed(PC_r);
 
 // Next pc is based on network or the instruction
 always_comb
@@ -227,7 +230,7 @@ always_comb
     if (net_PC_write_cmd_IDLE)
       PC_n = net_packet_i.net_addr;
     else
-      unique casez (instruction)
+      unique casez (instruction_id_ex)
         `kJALR:
           PC_n = alu_result_ex_m[0+:imem_addr_width_p];
         `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
@@ -261,7 +264,7 @@ always_ff @ (posedge clk)
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
         //state_r (in pipeline as state_ex_m)        <= state_n; //original
-        instruction_r  <= instruction_ex_m;
+        instruction_r  <= instruction_id_ex;
         PC_wen_r       <= PC_wen;
         exception_o    <= exception_n;
         mem_stage_r    <= mem_stage_n;
@@ -298,7 +301,7 @@ always_comb
   end
 
 // Decode module
-cl_decode decode (.instruction_i(instruction)
+cl_decode decode (.instruction_i(instruction) //if_id
                   ,.is_load_op_o(de_control_n.is_load_op_c)
                   ,.op_writes_rf_o(de_control_n.op_writes_rf_c)
                   ,.is_store_op_o(de_control_n.is_store_op_c)
@@ -307,7 +310,7 @@ cl_decode decode (.instruction_i(instruction)
                   );
 
 // State machine
-cl_state_machine state_machine (.instruction_i(instruction)
+cl_state_machine state_machine (.instruction_i(instruction) //if_id
                                ,.state_i(state_ex_m)
                                ,.exception_i(exception_o)
                                ,.net_PC_write_cmd_IDLE_i(net_PC_write_cmd_IDLE)
@@ -364,7 +367,7 @@ always_comb
 // or by an an BAR instruction that is committing
 assign barrier_n = net_PC_write_cmd_IDLE
                    ? net_packet_i.net_data[0+:mask_length_gp]
-                   : ((instruction==?`kBAR) & ~stall)
+                   : ((instruction_id_ex==?`kBAR) & ~stall) //calculate new barrier from 'last' instruction
                      ? alu_result_ex_m [0+:mask_length_gp]
                      : barrier_r;
 
