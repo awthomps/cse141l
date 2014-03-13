@@ -26,15 +26,15 @@ module core #(parameter imem_addr_width_p=10
 
 //---- Adresses and Data ----//
 // Ins. memory address signals
-logic [imem_addr_width_p-1:0] PC_r, PC_rr, PC_rrr, PC_re, PC_n, IF_stage,
+logic [imem_addr_width_p-1:0] PC_r, PC_if_id, PC_id_ex, PC_ex_m, PC_n, IF_stage,
                               pc_plus1, imem_addr,
                               imm_jump_add;
 // Ins. memory output
 instruction_s instruction, imem_out, instruction_r, inT;
 
 // Result of ALU, Register file outputs, Data memory output data
-logic [31:0] alu_result, alu_resultt, rs_val_or_zero, rs_val_or_zeroo, rs_val_or_zerorrr,
-rd_val_or_zero, rd_val_or_zeroo, rd_val_or_zerorrr,
+logic [31:0] alu_result_ex_m, alu_result_n, rs_val_or_zero, rs_val_or_zero_n,
+rd_val_or_zero, rd_val_or_zero_n,
 rs_val, rd_val, reg_20_val;
 
 // Reg. File address
@@ -45,7 +45,7 @@ logic [31:0] rf_wd;
 
 //---- Control signals ----//
 // ALU output to determin whether to jump or not
-logic jump_now, jump_noww;
+logic jump_now;
 
 // controller output signals
 logic is_load_op_c,  op_writes_rf_c, valid_to_mem_c, branch_taken,
@@ -71,7 +71,7 @@ logic stall, stall_non_mem;
 logic exception_n;
 
 // State machine signals
-state_e state_r,state_n, state_rrr, state_re;
+state_e state_n, state_id_ex, state_ex_m;
 
 ///////////////////////////////IF/ID stage//////////////////////////////////////////////
 assign instruction_fetch_en1 = (~stall);
@@ -79,36 +79,36 @@ always_ff @(posedge clk) begin
 if(!reset)
 begin
 instruction <= 0;
-PC_r <= 0;
+PC_if_id <= 0;
 end
 else if(instruction_fetch_en1)
   begin
     instruction <= inT;   
-	  PC_r <= PC_rr;
+	  PC_if_id <= PC_r;
   end
 end
 
 // Decode controls:
-decode_controls_s de_control_r, de_control_rrr, de_control_re;
+decode_controls_s de_control_n, de_control_id_ex, de_control_ex_m;
 
 //////////////////////////////ID/EX/////////////////////////////////////////////
 assign IDEX_en = ( ~stall || (instruction != `kLW) || (instruction !=`kLBU));
 always_ff @(posedge clk) begin
 if(!reset)
 begin
-  rs_val_or_zerorrr<= 0;
-  PC_rrr <= 0;
-  rd_val_or_zerorrr<=0;
-  state_rrr         <= IDLE;
-  de_control_rrr <= 0;
+  rs_val_or_zero<= 0;
+  PC_id_ex <= 0;
+  rd_val_or_zero<=0;
+  state_id_ex         <= IDLE;
+  de_control_id_ex <= 0;
 end
 else if(IDEX_en)
   begin
-     rs_val_or_zerorrr <=rs_val_or_zeroo;
-	   PC_rrr <= PC_r;
-		state_rrr   <= state_n;
-		de_control_rrr <= de_control_r;
-	   rd_val_or_zerorrr<=rd_val_or_zeroo;
+     rs_val_or_zero <=rs_val_or_zero_n;
+	   PC_id_ex <= PC_if_id;
+		state_id_ex   <= state_n;
+		de_control_id_ex <= de_control_n;
+	   rd_val_or_zero<=rd_val_or_zero_n;
   end
 end
 
@@ -117,23 +117,17 @@ assign ex_mem_en1 = ( ~stall);
 always_ff @(posedge clk) begin
 if(!reset)
 begin
-rs_val_or_zero<= 0;
-rd_val_or_zero<=0;
-alu_result <= 0;
-PC_re <= 0;
-jump_now <=0;
-state_re <= IDLE;
-de_control_re <= 0;
+alu_result_ex_m <= 0;
+PC_ex_m <= 0;
+state_ex_m <= IDLE;
+de_control_ex_m <= 0;
 end
 else if(ex_mem_en1)
   begin
-    alu_result <= alu_resultt;
-    jump_now <=jump_noww;  
-  	 PC_re <= PC_rrr;
-	 state_re <= state_rrr;
-	 de_control_re <= de_control_rrr;
-	 rs_val_or_zero <= rs_val_or_zerorrr;
-	rd_val_or_zero <= rd_val_or_zerorrr;
+    alu_result_ex_m <= alu_result_n;
+  	 PC_ex_m <= PC_id_ex;
+	 state_ex_m <= state_id_ex;
+	 de_control_ex_m <= de_control_id_ex;
   end
 end
 
@@ -153,14 +147,14 @@ assign net_packet_o = net_packet_i;
 // Data_mem
 assign to_mem_o = '{write_data    : rs_val_or_zero
                    ,valid         : valid_to_mem_c
-                   ,wen           : de_control_re.is_store_op_c
-                   ,byte_not_word : de_control_re.is_byte_op_c
+                   ,wen           : de_control_ex_m.is_store_op_c
+                   ,byte_not_word : de_control_ex_m.is_byte_op_c
                    ,yumi          : yumi_to_mem_c
                    };
-assign data_mem_addr = alu_result;
+assign data_mem_addr = alu_result_ex_m;
 
 // DEBUG Struct
-assign debug_o = {PC_r, instruction, state_r, barrier_mask_r, barrier_r};
+assign debug_o = {PC_if_id, instruction, state_ex_m, barrier_mask_r, barrier_r};
 
 // Insruction memory
 instr_mem #(.addr_width_p(imem_addr_width_p)) imem
@@ -187,16 +181,16 @@ reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
           //,.reg_20_val_o(reg_20_val)
           );
 
-assign rs_val_or_zeroo = instruction.rs_imm ? rs_val : 32'b0;
-assign rd_val_or_zeroo = rd_addr            ? rd_val : 32'b0;
+assign rs_val_or_zero_n = instruction.rs_imm ? rs_val : 32'b0;
+assign rd_val_or_zero_n = rd_addr            ? rd_val : 32'b0;
 
 // ALU
 alu alu_1 (.rd_i(rd_val_or_zero)
           ,.rs_i(rs_val_or_zero)
           //,.reg_20_i(reg_20_val)
           ,.op_i(instruction)
-          ,.result_o(alu_resultt)
-          ,.jump_now_o(jump_noww)
+          ,.result_o(alu_result_n)
+          ,.jump_now_o(jump_now)
           );
 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
@@ -209,16 +203,16 @@ always_comb
     else if (instruction==?`kJALR)
       rf_wd = pc_plus1;
 
-    else if (de_control_re.is_load_op_c)
+    else if (de_control_ex_m.is_load_op_c)
       rf_wd = from_mem_i.read_data;
       
     else
-      rf_wd = alu_result;
+      rf_wd = alu_result_ex_m;
   end
 
 // Determine next PC
-assign pc_plus1     = PC_rr + 1'b1;
-assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_rr);
+assign pc_plus1     = PC_r + 1'b1;
+assign imm_jump_add = $signed(instruction.rs_imm)  + $signed(PC_r);
 
 // Next pc is based on network or the instruction
 always_comb
@@ -229,7 +223,7 @@ always_comb
     else
       unique casez (instruction)
         `kJALR:
-          PC_n = alu_result[0+:imem_addr_width_p];
+          PC_n = alu_result_ex_m[0+:imem_addr_width_p];
         `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
           if (jump_now)
             PC_n = imm_jump_add;
@@ -244,10 +238,10 @@ always_ff @ (posedge clk)
   begin
     if (!reset)
       begin
-        PC_rr            <= 0;
+        PC_r            <= 0;
         barrier_mask_r  <= {(mask_length_gp){1'b0}};
         barrier_r       <= {(mask_length_gp){1'b0}};
-        //state_r         <= IDLE; //original 
+        //state_r (in pipeline as state_ex_m)         <= IDLE; //original 
         instruction_r   <= 0;
         PC_wen_r        <= 0;
         exception_o     <= 0;
@@ -257,10 +251,10 @@ always_ff @ (posedge clk)
     else
       begin
         if (PC_wen)
-          PC_rr         <= PC_n;
+          PC_r         <= PC_n;
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
-        //state_r        <= state_n; //original
+        //state_r (in pipeline as state_ex_m)        <= state_n; //original
         instruction_r  <= instruction;
         PC_wen_r       <= PC_wen;
         exception_o    <= exception_n;
@@ -273,7 +267,7 @@ always_ff @ (posedge clk)
 assign stall_non_mem = (net_reg_write_cmd && op_writes_rf_c)
                     || (net_imem_write_cmd);
 // Stall if LD/ST still active; or in non-RUN state
-assign stall = stall_non_mem || (mem_stage_n != 0) || (state_r != RUN);
+assign stall = stall_non_mem || (mem_stage_n != 0) || (state_ex_m != RUN);
 
 // Launch LD/ST
 assign valid_to_mem_c = is_mem_op_c & (mem_stage_r < 2'b10);
@@ -299,16 +293,16 @@ always_comb
 
 // Decode module
 cl_decode decode (.instruction_i(instruction)
-                  ,.is_load_op_o(de_control_r.is_load_op_c)
-                  ,.op_writes_rf_o(de_control_r.op_writes_rf_c)
-                  ,.is_store_op_o(de_control_r.is_store_op_c)
-                  ,.is_mem_op_o(de_control_r.is_mem_op_c)
-                  ,.is_byte_op_o(de_control_r.is_byte_op_c)
+                  ,.is_load_op_o(de_control_n.is_load_op_c)
+                  ,.op_writes_rf_o(de_control_n.op_writes_rf_c)
+                  ,.is_store_op_o(de_control_n.is_store_op_c)
+                  ,.is_mem_op_o(de_control_n.is_mem_op_c)
+                  ,.is_byte_op_o(de_control_n.is_byte_op_c)
                   );
 
 // State machine
 cl_state_machine state_machine (.instruction_i(instruction)
-                               ,.state_i(state_re)
+                               ,.state_i(state_ex_m)
                                ,.exception_i(exception_o)
                                ,.net_PC_write_cmd_IDLE_i(net_PC_write_cmd_IDLE)
                                ,.stall_i(stall)
@@ -324,7 +318,7 @@ assign net_PC_write_cmd      = (net_ID_match && (net_packet_i.net_op==PC));
 assign net_imem_write_cmd    = (net_ID_match && (net_packet_i.net_op==INSTR));
 assign net_reg_write_cmd     = (net_ID_match && (net_packet_i.net_op==REG));
 assign net_bar_write_cmd     = (net_ID_match && (net_packet_i.net_op==BAR));
-assign net_PC_write_cmd_IDLE = (net_PC_write_cmd && (state_r==IDLE));
+assign net_PC_write_cmd_IDLE = (net_PC_write_cmd && (state_ex_m==IDLE));
 
 // Barrier final result, in the barrier mask, 1 means not mask and 0 means mask
 assign barrier_o = barrier_mask_r & barrier_r;
@@ -333,7 +327,7 @@ assign barrier_o = barrier_mask_r & barrier_r;
 assign imem_wen  = net_imem_write_cmd;
 
 // Register write could be from network or the controller
-assign rf_wen    = (net_reg_write_cmd || (de_control_re.op_writes_rf_c && ~stall));
+assign rf_wen    = (net_reg_write_cmd || (de_control_ex_m.op_writes_rf_c && ~stall));
 
 // Selection between network and core for instruction address
 assign imem_addr = (net_imem_write_cmd) ? net_packet_i.net_addr
@@ -354,7 +348,7 @@ assign net_instruction = net_packet_i.net_data [0+:($bits(instruction))];
 // barrier_mask_n, which stores the mask for barrier signal
 always_comb
   // Change PC packet
-  if (net_bar_write_cmd && (state_r != ERR))
+  if (net_bar_write_cmd && (state_ex_m != ERR))
     barrier_mask_n = net_packet_i.net_data [0+:mask_length_gp];
   else
     barrier_mask_n = barrier_mask_r;
@@ -365,7 +359,7 @@ always_comb
 assign barrier_n = net_PC_write_cmd_IDLE
                    ? net_packet_i.net_data[0+:mask_length_gp]
                    : ((instruction==?`kBAR) & ~stall)
-                     ? alu_result [0+:mask_length_gp]
+                     ? alu_result_ex_m [0+:mask_length_gp]
                      : barrier_r;
 
 // exception_n signal, which indicates an exception
@@ -376,7 +370,7 @@ assign barrier_n = net_PC_write_cmd_IDLE
 // a wrong package, but do not stop the execution. Afterwards the exception_r
 // register is used to avoid extra fetch after this instruction.
 always_comb
-  if ((state_r==ERR) || (net_PC_write_cmd && (state_r!=IDLE)))
+  if ((state_ex_m==ERR) || (net_PC_write_cmd && (state_ex_m!=IDLE)))
     exception_n = 1'b1;
   else
     exception_n = exception_o;
