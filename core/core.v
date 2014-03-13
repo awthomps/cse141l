@@ -4,8 +4,10 @@
 
 //TODO:
 // -make sure that the to_mem_o struct has the correct values going into it
-// -create a more consistent naming scheme
 // -make sure correct signals are going into the muxes in the last stage of the writeback
+// -make sure correct signals going into barrier calculations
+// -make sure correct instruction is being used to calculate the next PC
+// -send down the rf_wen signal to be used in the last stage
 
 module core #(parameter imem_addr_width_p=10
                        ,net_ID_p = 10'b0000000001)
@@ -30,7 +32,7 @@ logic [imem_addr_width_p-1:0] PC_r, PC_if_id, PC_id_ex, PC_ex_m, PC_n, IF_stage,
                               pc_plus1, imem_addr,
                               imm_jump_add;
 // Ins. memory output
-instruction_s instruction, imem_out, instruction_r, inT;
+instruction_s instruction, imem_out, instruction_r, inT, instruction_id_ex, instruction_ex_m;
 
 // Result of ALU, Register file outputs, Data memory output data
 logic [31:0] alu_result_ex_m, alu_result_n, rs_val_or_zero, rs_val_or_zero_n,
@@ -101,6 +103,7 @@ begin
   rd_val_or_zero<=0;
   state_id_ex         <= IDLE;
   de_control_id_ex <= 0;
+  instruction_id_ex <= 0;
 end
 else if(IDEX_en)
   begin
@@ -109,6 +112,7 @@ else if(IDEX_en)
 		state_id_ex   <= state_n;
 		de_control_id_ex <= de_control_n;
 	   rd_val_or_zero<=rd_val_or_zero_n;
+		instruction_id_ex <= instruction;
   end
 end
 
@@ -121,6 +125,7 @@ alu_result_ex_m <= 0;
 PC_ex_m <= 0;
 state_ex_m <= IDLE;
 de_control_ex_m <= 0;
+instruction_ex_m <= 0;
 end
 else if(ex_mem_en1)
   begin
@@ -128,6 +133,7 @@ else if(ex_mem_en1)
   	 PC_ex_m <= PC_id_ex;
 	 state_ex_m <= state_id_ex;
 	 de_control_ex_m <= de_control_id_ex;
+	 instruction_ex_m <= instruction_id_ex;
   end
 end
 
@@ -255,7 +261,7 @@ always_ff @ (posedge clk)
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
         //state_r (in pipeline as state_ex_m)        <= state_n; //original
-        instruction_r  <= instruction;
+        instruction_r  <= instruction_ex_m;
         PC_wen_r       <= PC_wen;
         exception_o    <= exception_n;
         mem_stage_r    <= mem_stage_n;
