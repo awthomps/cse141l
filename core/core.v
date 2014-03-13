@@ -2,6 +2,11 @@
 `include "/projects/lab3/cse141l/core/definitions.v"
 
 
+//TODO:
+// -make sure that the to_mem_o struct has the correct values going into it
+// -create a more consistent naming scheme
+// -make sure correct signals are going into the muxes in the last stage of the writeback
+
 module core #(parameter imem_addr_width_p=10
                        ,net_ID_p = 10'b0000000001)
              (input  clk
@@ -28,8 +33,8 @@ logic [imem_addr_width_p-1:0] PC_r, PC_rr, PC_rrr, PC_re, PC_n, IF_stage,
 instruction_s instruction, imem_out, instruction_r, inT;
 
 // Result of ALU, Register file outputs, Data memory output data
-logic [31:0] alu_result, alu_resultt, rs_val_or_zero, rs_val_or_zeroo,
-rd_val_or_zero, rd_val_or_zeroo,
+logic [31:0] alu_result, alu_resultt, rs_val_or_zero, rs_val_or_zeroo, rs_val_or_zerorrr,
+rd_val_or_zero, rd_val_or_zeroo, rd_val_or_zerorrr,
 rs_val, rd_val, reg_20_val;
 
 // Reg. File address
@@ -66,7 +71,7 @@ logic stall, stall_non_mem;
 logic exception_n;
 
 // State machine signals
-state_e state_r,state_n;
+state_e state_r,state_n, state_rrr, state_re;
 
 ///////////////////////////////IF/ID stage//////////////////////////////////////////////
 assign instruction_fetch_en1 = (~stall);
@@ -83,20 +88,27 @@ else if(instruction_fetch_en1)
   end
 end
 
+// Decode controls:
+decode_controls_s de_control_r, de_control_rrr, de_control_re;
+
 //////////////////////////////ID/EX/////////////////////////////////////////////
 assign IDEX_en = ( ~stall || (instruction != `kLW) || (instruction !=`kLBU));
 always_ff @(posedge clk) begin
 if(!reset)
 begin
-  rs_val_or_zero<= 0;
+  rs_val_or_zerorrr<= 0;
   PC_rrr <= 0;
-  rd_val_or_zero<=0;
+  rd_val_or_zerorrr<=0;
+  state_rrr         <= IDLE;
+  de_control_rrr <= 0;
 end
 else if(IDEX_en)
   begin
-     rs_val_or_zero <=rs_val_or_zeroo;
+     rs_val_or_zerorrr <=rs_val_or_zeroo;
 	   PC_rrr <= PC_r;
-	   rd_val_or_zero<=rd_val_or_zeroo;
+		state_rrr   <= state_n;
+		de_control_rrr <= de_control_r;
+	   rd_val_or_zerorrr<=rd_val_or_zeroo;
   end
 end
 
@@ -105,15 +117,23 @@ assign ex_mem_en1 = ( ~stall);
 always_ff @(posedge clk) begin
 if(!reset)
 begin
+rs_val_or_zero<= 0;
+rd_val_or_zero<=0;
 alu_result <= 0;
 PC_re <= 0;
 jump_now <=0;
+state_re <= IDLE;
+de_control_re <= 0;
 end
 else if(ex_mem_en1)
   begin
     alu_result <= alu_resultt;
     jump_now <=jump_noww;  
   	 PC_re <= PC_rrr;
+	 state_re <= state_rrr;
+	 de_control_re <= de_control_rrr;
+	 rs_val_or_zero <= rs_val_or_zerorrr;
+	rd_val_or_zero <= rd_val_or_zerorrr;
   end
 end
 
@@ -133,8 +153,8 @@ assign net_packet_o = net_packet_i;
 // Data_mem
 assign to_mem_o = '{write_data    : rs_val_or_zero
                    ,valid         : valid_to_mem_c
-                   ,wen           : is_store_op_c
-                   ,byte_not_word : is_byte_op_c
+                   ,wen           : de_control_re.is_store_op_c
+                   ,byte_not_word : de_control_re.is_byte_op_c
                    ,yumi          : yumi_to_mem_c
                    };
 assign data_mem_addr = alu_result;
@@ -189,7 +209,7 @@ always_comb
     else if (instruction==?`kJALR)
       rf_wd = pc_plus1;
 
-    else if (is_load_op_c)
+    else if (de_control_re.is_load_op_c)
       rf_wd = from_mem_i.read_data;
       
     else
@@ -227,7 +247,7 @@ always_ff @ (posedge clk)
         PC_rr            <= 0;
         barrier_mask_r  <= {(mask_length_gp){1'b0}};
         barrier_r       <= {(mask_length_gp){1'b0}};
-        state_r         <= IDLE;
+        //state_r         <= IDLE; //original 
         instruction_r   <= 0;
         PC_wen_r        <= 0;
         exception_o     <= 0;
@@ -240,7 +260,7 @@ always_ff @ (posedge clk)
           PC_rr         <= PC_n;
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
-        state_r        <= state_n;
+        //state_r        <= state_n; //original
         instruction_r  <= instruction;
         PC_wen_r       <= PC_wen;
         exception_o    <= exception_n;
@@ -279,16 +299,16 @@ always_comb
 
 // Decode module
 cl_decode decode (.instruction_i(instruction)
-                  ,.is_load_op_o(is_load_op_c)
-                  ,.op_writes_rf_o(op_writes_rf_c)
-                  ,.is_store_op_o(is_store_op_c)
-                  ,.is_mem_op_o(is_mem_op_c)
-                  ,.is_byte_op_o(is_byte_op_c)
+                  ,.is_load_op_o(de_control_r.is_load_op_c)
+                  ,.op_writes_rf_o(de_control_r.op_writes_rf_c)
+                  ,.is_store_op_o(de_control_r.is_store_op_c)
+                  ,.is_mem_op_o(de_control_r.is_mem_op_c)
+                  ,.is_byte_op_o(de_control_r.is_byte_op_c)
                   );
 
 // State machine
 cl_state_machine state_machine (.instruction_i(instruction)
-                               ,.state_i(state_r)
+                               ,.state_i(state_re)
                                ,.exception_i(exception_o)
                                ,.net_PC_write_cmd_IDLE_i(net_PC_write_cmd_IDLE)
                                ,.stall_i(stall)
@@ -313,7 +333,7 @@ assign barrier_o = barrier_mask_r & barrier_r;
 assign imem_wen  = net_imem_write_cmd;
 
 // Register write could be from network or the controller
-assign rf_wen    = (net_reg_write_cmd || (op_writes_rf_c && ~stall));
+assign rf_wen    = (net_reg_write_cmd || (de_control_re.op_writes_rf_c && ~stall));
 
 // Selection between network and core for instruction address
 assign imem_addr = (net_imem_write_cmd) ? net_packet_i.net_addr

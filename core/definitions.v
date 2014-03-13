@@ -154,5 +154,13 @@ typedef struct packed {
 			controls_s m_wb; 
 } controls_buddle_s;
 
+typedef struct packed {
+	logic is_load_op_c;
+	logic op_writes_rf_c;
+	logic is_store_op_c;
+	logic is_mem_op_c;
+	logic is_byte_op_c;
+} decode_controls_s;
+
 
 `endif
