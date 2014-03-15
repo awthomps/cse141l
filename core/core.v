@@ -2,6 +2,11 @@
 `include "/projects/lab3/cse141l/core/definitions.v"
 
 
+// Importante note: Professor says that besides say, instruction, PC, and some
+// control stuff, a lot of these things can be handled without explicitly being taken
+// down the pipeline! For example, our state machine can be handled by adding some
+// extra logic to the stall, but we don't have to carry it down!
+
 //TODO:
 // -make sure that the to_mem_o struct has the correct values going into it
 // -make sure correct signals are going into the muxes in the last stage of the writeback
@@ -76,7 +81,7 @@ logic stall, stall_non_mem;
 logic exception_n;
 
 // State machine signals
-state_e state_n, state_id_ex, state_ex_m;
+state_e state_n, /*state_if_id, state_id_ex, state_ex_m,*/ state_r;
 
 ///////////////////////////////IF/ID stage//////////////////////////////////////////////
 assign instruction_fetch_en1 = (~stall);
@@ -85,11 +90,13 @@ if(!reset)
 begin
 instruction <= 0;
 PC_if_id <= 0;
+//state_if_id <= IDLE;
 end
 else if(instruction_fetch_en1)
   begin
     instruction <= inT;   
 	  PC_if_id <= PC_r;
+//	  state_if_id <= state_n;
   end
 end
 
@@ -104,7 +111,7 @@ begin
   rs_val_or_zero<= 0;
   PC_id_ex <= 0;
   rd_val_or_zero<=0;
-  state_id_ex         <= IDLE;
+//  state_id_ex         <= IDLE;
   de_control_id_ex <= 0;
   instruction_id_ex <= 0;
 end
@@ -112,7 +119,7 @@ else if(IDEX_en)
   begin
      rs_val_or_zero <=rs_val_or_zero_n;
 	   PC_id_ex <= PC_if_id;
-		state_id_ex   <= state_n;
+//		state_id_ex   <= state_r;
 		de_control_id_ex <= de_control_n;
 	   rd_val_or_zero<=rd_val_or_zero_n;
 		instruction_id_ex <= instruction;//if_id
@@ -126,7 +133,7 @@ if(!reset)
 begin
 alu_result_ex_m <= 0;
 PC_ex_m <= 0;
-state_ex_m <= IDLE;
+//state_ex_m <= IDLE;
 de_control_ex_m <= 0;
 instruction_ex_m <= 0;
 end
@@ -134,7 +141,7 @@ else if(ex_mem_en1)
   begin
     alu_result_ex_m <= alu_result_n;
   	 PC_ex_m <= PC_id_ex;
-	 state_ex_m <= state_id_ex;
+//	 state_ex_m <= state_id_ex;
 	 de_control_ex_m <= de_control_id_ex;
 	 instruction_ex_m <= instruction_id_ex;
   end
@@ -163,7 +170,7 @@ assign to_mem_o = '{write_data    : rs_val_or_zero
 assign data_mem_addr = alu_result_ex_m;
 
 // DEBUG Struct
-assign debug_o = {PC_if_id, instruction_ex_m, state_ex_m, barrier_mask_r, barrier_r};
+assign debug_o = {PC_if_id, instruction_ex_m, state_r, barrier_mask_r, barrier_r};
 
 // Insruction memory
 instr_mem #(.addr_width_p(imem_addr_width_p)) imem
@@ -250,7 +257,8 @@ always_ff @ (posedge clk)
         PC_r            <= 0;
         barrier_mask_r  <= {(mask_length_gp){1'b0}};
         barrier_r       <= {(mask_length_gp){1'b0}};
-        //state_r (in pipeline as state_ex_m)         <= IDLE; //original 
+        state_r         <= IDLE; //original
+//		  state_n			<= IDLE;
         instruction_r   <= 0;
         PC_wen_r        <= 0;
         exception_o     <= 0;
@@ -263,7 +271,8 @@ always_ff @ (posedge clk)
           PC_r         <= PC_n;
         barrier_mask_r <= barrier_mask_n;
         barrier_r      <= barrier_n;
-        //state_r (in pipeline as state_ex_m)        <= state_n; //original
+        state_r        <= state_n; //original
+//		  state_n			<= state_ex_m;
         instruction_r  <= instruction_id_ex;
         PC_wen_r       <= PC_wen;
         exception_o    <= exception_n;
@@ -276,7 +285,7 @@ always_ff @ (posedge clk)
 assign stall_non_mem = (net_reg_write_cmd && op_writes_rf_c)
                     || (net_imem_write_cmd);
 // Stall if LD/ST still active; or in non-RUN state
-assign stall = stall_non_mem || (mem_stage_n != 0) || (state_ex_m != RUN);
+assign stall = stall_non_mem || (mem_stage_n != 0) || (state_r != RUN);
 
 // Launch LD/ST
 assign valid_to_mem_c = is_mem_op_c & (mem_stage_r < 2'b10);
@@ -311,7 +320,7 @@ cl_decode decode (.instruction_i(instruction) //if_id
 
 // State machine
 cl_state_machine state_machine (.instruction_i(instruction) //if_id
-                               ,.state_i(state_ex_m)
+                               ,.state_i(state_r)
                                ,.exception_i(exception_o)
                                ,.net_PC_write_cmd_IDLE_i(net_PC_write_cmd_IDLE)
                                ,.stall_i(stall)
@@ -327,7 +336,7 @@ assign net_PC_write_cmd      = (net_ID_match && (net_packet_i.net_op==PC));
 assign net_imem_write_cmd    = (net_ID_match && (net_packet_i.net_op==INSTR));
 assign net_reg_write_cmd     = (net_ID_match && (net_packet_i.net_op==REG));
 assign net_bar_write_cmd     = (net_ID_match && (net_packet_i.net_op==BAR));
-assign net_PC_write_cmd_IDLE = (net_PC_write_cmd && (state_ex_m==IDLE));
+assign net_PC_write_cmd_IDLE = (net_PC_write_cmd && (state_r ==IDLE));
 
 // Barrier final result, in the barrier mask, 1 means not mask and 0 means mask
 assign barrier_o = barrier_mask_r & barrier_r;
@@ -357,7 +366,7 @@ assign net_instruction = net_packet_i.net_data [0+:($bits(instruction))];
 // barrier_mask_n, which stores the mask for barrier signal
 always_comb
   // Change PC packet
-  if (net_bar_write_cmd && (state_ex_m != ERR))
+  if (net_bar_write_cmd && (state_r != ERR))
     barrier_mask_n = net_packet_i.net_data [0+:mask_length_gp];
   else
     barrier_mask_n = barrier_mask_r;
@@ -379,7 +388,7 @@ assign barrier_n = net_PC_write_cmd_IDLE
 // a wrong package, but do not stop the execution. Afterwards the exception_r
 // register is used to avoid extra fetch after this instruction.
 always_comb
-  if ((state_ex_m==ERR) || (net_PC_write_cmd && (state_ex_m!=IDLE)))
+  if ((state_r==ERR) || (net_PC_write_cmd && (state_r!=IDLE)))
     exception_n = 1'b1;
   else
     exception_n = exception_o;
