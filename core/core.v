@@ -12,7 +12,6 @@
 // -make sure correct signals are going into the muxes in the last stage of the writeback
 // -make sure correct signals going into barrier calculations
 // -make sure correct instruction is being used to calculate the next PC
-// -send down the rf_wen signal to be used in the last stage
 // -in ID/EX, make sure that the IDEX_en is getting all the correct checks for the instructions
 //		that amend the registers.
 // -remove the forwarding for now
@@ -55,7 +54,7 @@ logic [31:0] rf_wd;
 
 //---- Control signals ----//
 // ALU output to determin whether to jump or not
-logic jump_now;
+logic jump_now, jump_now_n;
 
 // controller output signals
 logic is_load_op_c,  op_writes_rf_c, valid_to_mem_c, branch_taken,
@@ -67,7 +66,7 @@ logic is_load_op_c,  op_writes_rf_c, valid_to_mem_c, branch_taken,
 logic yumi_to_mem_c;
 
 // Final signals after network interfere
-logic imem_wen, rf_wen;
+logic imem_wen, rf_wen, rf_wen_id_ex, rf_wen_n;
 
 // Network operation signals
 logic net_ID_match,      net_PC_write_cmd,  net_imem_write_cmd,
@@ -75,7 +74,7 @@ logic net_ID_match,      net_PC_write_cmd,  net_imem_write_cmd,
 
 // Memory stages and stall signals
 logic [1:0] mem_stage_r, mem_stage_n;
-logic stall, stall_non_mem;
+logic stall, stall_non_mem, nop_stall;
 
 // Exception signal
 logic exception_n;
@@ -88,7 +87,7 @@ assign instruction_fetch_en1 = (~stall);
 always_ff @(posedge clk) begin
 if(!reset)
 begin
-instruction <= 0;
+instruction <= `kNOP;
 PC_if_id <= 0;
 //state_if_id <= IDLE;
 end
@@ -113,7 +112,8 @@ begin
   rd_val_or_zero<=0;
 //  state_id_ex         <= IDLE;
   de_control_id_ex <= 0;
-  instruction_id_ex <= 0;
+  instruction_id_ex <= `kNOP;
+  rf_wen_id_ex <= 0;
 end
 else if(IDEX_en)
   begin
@@ -123,6 +123,7 @@ else if(IDEX_en)
 		de_control_id_ex <= de_control_n;
 	   rd_val_or_zero<=rd_val_or_zero_n;
 		instruction_id_ex <= instruction;//if_id
+		rf_wen_id_ex <= rf_wen_n;
   end
 end
 
@@ -135,7 +136,9 @@ alu_result_ex_m <= 0;
 PC_ex_m <= 0;
 //state_ex_m <= IDLE;
 de_control_ex_m <= 0;
-instruction_ex_m <= 0;
+instruction_ex_m <= `kNOP;
+rf_wen <= 0;
+jump_now <= 0;
 end
 else if(ex_mem_en1)
   begin
@@ -144,8 +147,28 @@ else if(ex_mem_en1)
 //	 state_ex_m <= state_id_ex;
 	 de_control_ex_m <= de_control_id_ex;
 	 instruction_ex_m <= instruction_id_ex;
+	 rf_wen <= rf_wen_id_ex;
+	 jump_now <= jump_now_n;
   end
 end
+
+
+//Counter setup
+logic [1:0] counter;
+always_ff @ (posedge clk) begin
+	if(!reset)
+		counter	<= 2'b11;
+	else if(~stall || state_n == RUN)
+		counter <= (counter + 2'b01) % 4;
+
+end
+always_comb begin
+	if(counter == 2'b00)
+		nop_stall = 0;
+	else
+		nop_stall = 1;
+end
+
 
 
 //--------------------------------------stage & stall-----------------------------------------------------//
@@ -184,7 +207,8 @@ instr_mem #(.addr_width_p(imem_addr_width_p)) imem
 // Since imem has one cycle delay and we send next cycle's address, PC_n,
 // if the PC is not written, the instruction must not change
 //assign instruction = (PC_wen_r) ? imem_out : instruction_r;//////////////////////////////////
-assign inT = (PC_wen_r) ? imem_out : instruction_r;
+//assign inT = (PC_wen_r) ? imem_out : instruction_r;
+assign inT = (nop_stall) ? `kNOP : ((PC_wen_r) ? imem_out : instruction_r);
 // Register file
 reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
           (.clk(clk)
@@ -206,7 +230,7 @@ alu alu_1 (.rd_i(rd_val_or_zero)
           //,.reg_20_i(reg_20_val)
           ,.op_i(instruction_id_ex)
           ,.result_o(alu_result_n)
-          ,.jump_now_o(jump_now)
+          ,.jump_now_o(jump_now_n)
           );
 
 // select the input data for Register file, from network, the PC_plus1 for JALR,
@@ -228,26 +252,30 @@ always_comb
 
 // Determine next PC
 assign pc_plus1     = PC_r + 1'b1;
+assign pc_plus0 	  = PC_r;
 assign imm_jump_add = $signed(instruction_id_ex.rs_imm)  + $signed(PC_r);
 
 // Next pc is based on network or the instruction
 always_comb
   begin
-    PC_n = pc_plus1;
-    if (net_PC_write_cmd_IDLE)
-      PC_n = net_packet_i.net_addr;
-    else
-      unique casez (instruction_id_ex)
-        `kJALR:
-          PC_n = alu_result_ex_m[0+:imem_addr_width_p];
-        `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
-          if (jump_now)
-            PC_n = imm_jump_add;
-        default: begin end
-      endcase
+    PC_n = pc_plus0;
+	 if(counter == 2'b11) begin
+		PC_n = pc_plus1;
+		if (net_PC_write_cmd_IDLE)
+			PC_n = net_packet_i.net_addr;
+		else
+			unique casez (instruction_id_ex)
+			  `kJALR:
+				 PC_n = alu_result_ex_m[0+:imem_addr_width_p];
+			  `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
+				 if (jump_now)
+					PC_n = imm_jump_add;
+			  default: begin end
+			endcase
+		end
   end
 
-assign PC_wen = (net_PC_write_cmd_IDLE || ~stall);
+assign PC_wen = (net_PC_write_cmd_IDLE || ~stall) && (counter == 2'b11);
 
 // Sequential part, including PC, barrier, exception and state
 always_ff @ (posedge clk)
@@ -263,6 +291,7 @@ always_ff @ (posedge clk)
         PC_wen_r        <= 0;
         exception_o     <= 0;
         mem_stage_r     <= 2'b00;
+		  //nop_stall			<= 0;
       end
 
     else
@@ -345,7 +374,7 @@ assign barrier_o = barrier_mask_r & barrier_r;
 assign imem_wen  = net_imem_write_cmd;
 
 // Register write could be from network or the controller
-assign rf_wen    = (net_reg_write_cmd || (de_control_ex_m.op_writes_rf_c && ~stall));
+assign rf_wen_n    = (net_reg_write_cmd || (de_control_n.op_writes_rf_c && ~stall));
 
 // Selection between network and core for instruction address
 assign imem_addr = (net_imem_write_cmd) ? net_packet_i.net_addr
@@ -376,8 +405,8 @@ always_comb
 // or by an an BAR instruction that is committing
 assign barrier_n = net_PC_write_cmd_IDLE
                    ? net_packet_i.net_data[0+:mask_length_gp]
-                   : ((instruction_id_ex==?`kBAR) & ~stall) //calculate new barrier from 'last' instruction
-                     ? alu_result_ex_m [0+:mask_length_gp]
+                   : ((inT==?`kBAR) & ~stall) //calculate new barrier from 'last' instruction (had been instruction_id_ex)
+                     ? alu_result_n [0+:mask_length_gp]
                      : barrier_r;
 
 // exception_n signal, which indicates an exception

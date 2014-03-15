@@ -3,6 +3,9 @@
 `ifndef _definitions_v_
 `define _definitions_v_
 
+//NOP definition:
+`define kNOP	16'b01010_00000_000000
+
 // Instruction map
 `define kADDU  16'b00000_?????_??????
 `define kSUBU  16'b00001_?????_??????
