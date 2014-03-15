@@ -252,28 +252,29 @@ always_comb
 
 // Determine next PC
 assign pc_plus1     = PC_r + 1'b1;
-assign pc_plus0 	  = PC_r;
-assign imm_jump_add = $signed(instruction_id_ex.rs_imm)  + $signed(PC_r);
+assign pc_plus0 	  = PC_r;//PC_r;
+assign imm_jump_add = $signed(instruction_ex_m.rs_imm)  + $signed(PC_r);
 
 // Next pc is based on network or the instruction
 always_comb
-  begin
-    PC_n = pc_plus0;
-	 if(counter == 2'b11) begin
-		PC_n = pc_plus1;
-		if (net_PC_write_cmd_IDLE)
-			PC_n = net_packet_i.net_addr;
-		else
-			unique casez (instruction_id_ex)
-			  `kJALR:
-				 PC_n = alu_result_ex_m[0+:imem_addr_width_p];
-			  `kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
-				 if (jump_now)
-					PC_n = imm_jump_add;
-			  default: begin end
-			endcase
-		end
+begin
+  PC_n = pc_plus0;
+  if(counter == 2'b11) begin
+    PC_n = pc_plus1;
+    if (net_PC_write_cmd_IDLE) begin
+      PC_n = net_packet_i.net_addr;
+  end else begin
+		unique casez (instruction_ex_m)
+			`kJALR:
+			 PC_n = alu_result_ex_m[0+:imem_addr_width_p];
+			`kBNEQZ,`kBEQZ,`kBLTZ,`kBGTZ:
+			 if (jump_now)
+				PC_n = imm_jump_add;
+			default: begin end
+		endcase
+	end
   end
+end
 
 assign PC_wen = (net_PC_write_cmd_IDLE || ~stall) && (counter == 2'b11);
 
@@ -302,7 +303,7 @@ always_ff @ (posedge clk)
         barrier_r      <= barrier_n;
         state_r        <= state_n; //original
 //		  state_n			<= state_ex_m;
-        instruction_r  <= instruction_id_ex;
+        instruction_r  <= instruction_ex_m;
         PC_wen_r       <= PC_wen;
         exception_o    <= exception_n;
         mem_stage_r    <= mem_stage_n;
