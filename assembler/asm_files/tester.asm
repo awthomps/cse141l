@@ -30,7 +30,6 @@ LBU_TEST:
 
 // Test for BEQ
 BEQZ  $R0,START
-//MOV   %R0,%R0
 
 // Check_answer subroutine
 
@@ -51,7 +50,6 @@ CHECK_ANSWER:
 
 SUBU  $R7,$R6
 BEQZ  $R7,PASS
-//MOV   %R0,%R0
 
 ADDU  $R7, $R6           // Reconstruct wrong answer
 SW    $R11, $R7    // Output wrong answer
@@ -59,23 +57,19 @@ SW    $R12, $R5    // Indicate failed test
 ADDU  $R11, %ONE
 ADDU  $R12, %ONE
 JALR  $R0,$R1
-//MOV   %R0,%R0
 
 PASS:
 
 SW    $R10, $R5    // indicate passed test
 JALR  $R0,$R1
-//MOV   %R0,%R0
 
 // Backward jump test
 START0:
 BEQZ  $R0,START1
-//MOV   %R0,%R0
 
 // Start of the test
 START:
 BEQZ  $R0,START0
-//MOV   %R0,%R0
 
 START1:
 
@@ -91,10 +85,8 @@ MOV   $R12,%FAIL_Test
 MOV   $R13,%DONE_Test
 
 BEQZ  $R5, WRONG1
-//MOV   %R0,%R0
 SW    $R10,$R5   // indicate passed test
 BEQZ  $R0, CONT0
-//MOV   %R0,%R0
 
 WRONG1:
 SW    $R11,$R5  // Output wrong answer
@@ -108,7 +100,6 @@ ADDU  $R5,%ONE      // Update test counter
 MOV   $R7,$C5
 ADDU  $R7,$C6
 BEQZ  $R7,CONT1
-//MOV   %R0,%R0
 SW    $R11,$R5   // Output wrong answer
 SW    $R12,$R5   // Indicate failed test
 
@@ -121,7 +112,6 @@ MOV   $R7,$R0
 SUBU  $R7,%ONE
 ADDU  $R7,%ONE
 BEQZ  $R7,CONT2
-//MOV   %R0,%R0
 SW    $R11,$R5   // Output wrong answer
 SW    $R12,$R5   // Indicate failed test
 
@@ -134,7 +124,6 @@ MOV   $R7,$R0
 SUBU  $R7,%ONE
 ADDU  $R7,%ONE
 BEQZ  $R7,CONT3
-//MOV   %R0,%R0
 SW    $R11,$R5   // Output wrong answer
 SW    $R12,$R5   // Indicate failed test
 
@@ -145,14 +134,12 @@ SW    $R10,$R5   // Indicate passed test
 ADDU  $R5,%ONE
 .const %NEXT     , NEXT
 JALR  $R1,%NEXT
-//MOV   %R0,%R0
 SW    $R12, $R5    // Indicate failed test
 
 NEXT:
 //Change the return address to the PASSED_JALR line.
 ADDU  $R1,%SIX    
 JALR  $R0,$R1
-//MOV   %R0,%R0
 SW    $R12, $R5    // Indicate failed test
 
 PASSED_JALR:
@@ -173,7 +160,6 @@ MOV   $R6,$C2
 // Call the checker subroutine, $R5 = test number, 
 // $R6 = good answer, $R7 = actual answer, $R1 = return address
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for LW
 ADDU  $R5,%ONE
@@ -182,7 +168,6 @@ MOV   $R7,$R0
 LW    $R7,$C3
 MOV   $R6,$C1
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for SB
 ADDU  $R5,%ONE
@@ -195,17 +180,14 @@ MOV   $R7,$R0
 LW    $R7,%LBU_TEST
 MOV   $R6,$C4
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for BNEQZ
 ADDU  $R5,%ONE
 MOV   $R2,$R0
 ADDU  $R2,%ONE
 BNEQZ $R2,CONT4
-//MOV   %R0,%R0
 SW    $R12,$R5   // Indicate failed test
 BEQZ  $R0, CONT5
-//MOV   %R0,%R0
 CONT4:
 SW    $R10,$R5  //Indicate Passed Test
 CONT5:
@@ -217,7 +199,6 @@ SUBU  $R2,%ONE
 BLTZ  $R2,CONT6
 SW    $R12,$R5   // Indicate failed test
 BEQZ  $R0, CONT7
-//MOV   %R0,%R0
 CONT6:
 SW    $R10,$R5  //Indicate Passed Test
 CONT7:
@@ -227,10 +208,8 @@ ADDU  $R5,%ONE
 MOV   $R2,$R0
 ADDU  $R2,%ONE
 BGTZ  $R2,CONT8
-//MOV   %R0,%R0
 SW    $R12,$R5   // Indicate failed test
 BEQZ  $R0, CONT9
-//MOV   %R0,%R0
 CONT8:
 SW    $R10,$R5  //Indicate Passed Test
 CONT9:
@@ -242,7 +221,6 @@ SUBU  $R7,%ONE
 SLT   $R7,$R0
 MOV   $R6,%ONE
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for SLTU
 ADDU  $R5,%ONE
@@ -251,7 +229,6 @@ SUBU  $R7,%ONE
 SLTU  $R7,$R0
 MOV   $R6,$R0
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for AND
 .const %LOGIC1   , 0x0000FFFF
@@ -263,7 +240,6 @@ MOV   $R2,%LOGIC2
 AND   $R7,$R2
 MOV   $R6,%AND_ANS
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for OR
 .const %OR_ANS   , 0x00FFFFFF
@@ -273,7 +249,6 @@ MOV   $R2,%LOGIC2
 OR    $R7,$R2
 MOV   $R6,%OR_ANS
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for NOR
 .const %NOR_ANS  , 0xFF000000
@@ -283,7 +258,6 @@ MOV   $R2,%LOGIC2
 NOR   $R7,$R2
 MOV   $R6,%NOR_ANS
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for SLLV
 .const %SHIFT_INP, 0x80000000
@@ -292,7 +266,6 @@ MOV   $R7,%SHIFT_INP
 SLLV  $R7,%ONE
 MOV   $R6,$R0
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // Test for SRAV
 .const %SRAV_ANS , 0xC0000000
@@ -301,7 +274,6 @@ MOV   $R7,%SHIFT_INP
 SRAV  $R7,%ONE
 MOV   $R6,%SRAV_ANS
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 
 // Test for SRLV
@@ -311,7 +283,6 @@ MOV   $R7,%SHIFT_INP
 SRLV  $R7,%ONE
 MOV   $R6,%SRLV_ANS
 JALR  $R1,%CHECK
-//MOV   %R0,%R0
 
 // We can check the correctness of BAR instrution 
 // through the output barrier signal.

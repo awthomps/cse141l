@@ -47,7 +47,7 @@ rd_val_or_zero, rd_val_or_zero_n,
 rs_val, rd_val, reg_20_val;
 
 // Reg. File address
-logic [($bits(instruction.rs_imm))-1:0] rd_addr;
+logic [($bits(instruction.rs_imm))-1:0] rd_addr, rd_addr_mux_res;
 
 // Data for Reg. File signals
 logic [31:0] rf_wd;
@@ -213,8 +213,8 @@ assign inT = (nop_stall) ? `kNOP : ((PC_wen_r) ? imem_out : instruction_r);
 reg_file #(.addr_width_p($bits(instruction.rs_imm))) rf
           (.clk(clk)
           ,.rs_addr_i(instruction.rs_imm) //if_id
-          ,.rd_addr_i(rd_addr)
-          ,.wen_i(rf_wen)
+          ,.rd_addr_i(rd_addr_mux_res)
+          ,.wen_i(rf_wen || net_reg_write_cmd)
           ,.write_data_i(rf_wd)
           ,.rs_val_o(rs_val)
           ,.rd_val_o(rd_val)
@@ -375,7 +375,7 @@ assign barrier_o = barrier_mask_r & barrier_r;
 assign imem_wen  = net_imem_write_cmd;
 
 // Register write could be from network or the controller
-assign rf_wen_n    = (net_reg_write_cmd || (de_control_n.op_writes_rf_c && ~stall));
+assign rf_wen_n    = (net_reg_write_cmd || (de_control_n.op_writes_rf_c && ~stall)) && (instruction != `kNOP);
 
 // Selection between network and core for instruction address
 assign imem_addr = (net_imem_write_cmd) ? net_packet_i.net_addr
@@ -389,6 +389,8 @@ assign rd_addr = (net_reg_write_cmd)
                  ? (net_packet_i.net_addr [0+:($bits(instruction.rs_imm))])
                  : ({{($bits(instruction.rs_imm)-$bits(instruction.rd)){1'b0}}
                     ,{instruction.rd}});
+assign rd_addr_mux_res = (rf_wen)? ({{($bits(instruction_ex_m.rs_imm)-$bits(instruction_ex_m.rd)){1'b0}}
+                    ,{instruction_ex_m.rd}}) : rd_addr; 
 
 // Instructions are shorter than 32 bits of network data
 assign net_instruction = net_packet_i.net_data [0+:($bits(instruction))];
