@@ -42,7 +42,7 @@ logic [imem_addr_width_p-1:0] PC_r, PC_if_id, PC_id_ex, PC_ex_m, PC_n, IF_stage,
 instruction_s instruction, imem_out, instruction_r, inT, instruction_id_ex, instruction_ex_m;
 
 // Result of ALU, Register file outputs, Data memory output data
-logic [31:0] alu_result_ex_m, alu_result_n, rs_val_or_zero, rs_val_or_zero_n,
+logic [31:0] alu_result_ex_m, alu_result_n, rs_val_or_zero, rs_val_or_zero_n, rs_val_or_zero_ex_m,
 rd_val_or_zero, rd_val_or_zero_n,
 rs_val, rd_val, reg_20_val;
 
@@ -103,7 +103,7 @@ end
 decode_controls_s de_control_n, de_control_id_ex, de_control_ex_m;
 
 //////////////////////////////ID/EX/////////////////////////////////////////////
-assign IDEX_en = ( ~stall || (instruction != `kLW) || (instruction !=`kLBU));
+assign IDEX_en = ( ~stall /*|| (instruction != `kLW) || (instruction !=`kLBU)*/);
 always_ff @(posedge clk) begin
 if(!reset)
 begin
@@ -139,6 +139,7 @@ de_control_ex_m <= 0;
 instruction_ex_m <= `kNOP;
 rf_wen <= 0;
 jump_now <= 0;
+rs_val_or_zero_ex_m <= 0;
 end
 else if(ex_mem_en1)
   begin
@@ -149,16 +150,20 @@ else if(ex_mem_en1)
 	 instruction_ex_m <= instruction_id_ex;
 	 rf_wen <= rf_wen_id_ex;
 	 jump_now <= jump_now_n;
+	 rs_val_or_zero_ex_m <= rs_val_or_zero;
   end
 end
 
+/*
+logic not_load_or_store, stall_finish;
+assign not_load_or_store = ~de_control_ex_m.is_load_op_c || ~de_control_ex_m.is_store_op_c;*/
 
 //Counter setup
 logic [1:0] counter;
 always_ff @ (posedge clk) begin
 	if(!reset)
 		counter	<= 2'b11;
-	else if(~stall || state_n == RUN)
+	else if((~stall && state_n == RUN) || (stall && state_n == RUN && state_r == IDLE))
 		counter <= (counter + 2'b01) % 4;
 
 end
@@ -184,7 +189,7 @@ logic [mask_length_gp-1:0] barrier_r,      barrier_n,
 assign net_packet_o = net_packet_i;
 
 // Data_mem
-assign to_mem_o = '{write_data    : rs_val_or_zero
+assign to_mem_o = '{write_data    : rs_val_or_zero_ex_m
                    ,valid         : valid_to_mem_c
                    ,wen           : de_control_ex_m.is_store_op_c
                    ,byte_not_word : de_control_ex_m.is_byte_op_c
@@ -312,13 +317,13 @@ always_ff @ (posedge clk)
 
 // stall and memory stages signals
 // rf structural hazard and imem structural hazard (can't load next instruction)
-assign stall_non_mem = (net_reg_write_cmd && op_writes_rf_c)
+assign stall_non_mem = (net_reg_write_cmd && de_control_n.op_writes_rf_c)
                     || (net_imem_write_cmd);
 // Stall if LD/ST still active; or in non-RUN state
 assign stall = stall_non_mem || (mem_stage_n != 0) || (state_r != RUN);
 
 // Launch LD/ST
-assign valid_to_mem_c = is_mem_op_c & (mem_stage_r < 2'b10);
+assign valid_to_mem_c = de_control_ex_m.is_mem_op_c & (mem_stage_r < 2'b10);
 
 always_comb
   begin
